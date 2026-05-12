@@ -83,7 +83,7 @@ function TimePicker({ label, totalMinutes, onChange, color, rgb, use24 }) {
     fontFamily: 'JetBrains Mono, monospace',
     fontSize: 15,
     fontWeight: 700,
-    padding: '10px 8px',
+    padding: '11px 12px',
     outline: 'none',
     cursor: 'pointer',
     colorScheme: 'dark',
@@ -92,14 +92,14 @@ function TimePicker({ label, totalMinutes, onChange, color, rgb, use24 }) {
   return (
     <div>
       <p style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', fontFamily: 'Space Grotesk', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>{label}</p>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      <div style={{ display: 'flex', alignItems: 'stretch', gap: 6 }}>
         {/* Hour */}
         <select value={use24 ? h24 : h12} onChange={e => setHour(Number(e.target.value))} style={{ ...selStyle, flex: 1 }}>
           {(use24 ? HOURS_24 : HOURS_12).map(h => (
             <option key={h} value={h} style={{ background: '#0d0d1a' }}>{use24 ? pad(h) : h}</option>
           ))}
         </select>
-        <span style={{ color, fontWeight: 900, fontSize: 18, fontFamily: 'JetBrains Mono' }}>:</span>
+        <span style={{ color, fontWeight: 900, fontSize: 18, fontFamily: 'JetBrains Mono', display: 'flex', alignItems: 'center' }}>:</span>
         {/* Minute */}
         <select value={min} onChange={e => setMin(Number(e.target.value))} style={{ ...selStyle, flex: 1 }}>
           {MINUTES.map(m => (
@@ -108,15 +108,16 @@ function TimePicker({ label, totalMinutes, onChange, color, rgb, use24 }) {
         </select>
         {/* AM/PM */}
         {!use24 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             {['AM', 'PM'].map(p => (
               <motion.button
                 key={p}
                 onClick={() => setPeriod(p)}
                 whileTap={{ scale: 0.94 }}
                 style={{
-                  padding: '4px 10px', borderRadius: 7, fontSize: 11, fontWeight: 800,
+                  flex: 1, padding: '0 12px', borderRadius: 7, fontSize: 11, fontWeight: 800,
                   cursor: 'pointer', fontFamily: 'Space Grotesk',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
                   background: period === p ? `rgba(${rgb},0.25)` : 'rgba(255,255,255,0.05)',
                   border: `1.5px solid ${period === p ? color : 'rgba(255,255,255,0.08)'}`,
                   color: period === p ? color : '#475569',
@@ -133,10 +134,7 @@ function TimePicker({ label, totalMinutes, onChange, color, rgb, use24 }) {
 }
 
 export function EventDetailModal({ event, onSave, onClose }) {
-  const meta  = CATEGORY_META[event.card.category];
-  const color = customColor || meta.color;
-  const rgb   = hexToRgb(color);
-
+  // State must be declared before any derived values that reference them
   const [label,       setLabel]       = useState(event.card.label);
   const [description, setDescription] = useState(event.description || '');
   const [location,    setLocation]    = useState(event.location || '');
@@ -145,6 +143,10 @@ export function EventDetailModal({ event, onSave, onClose }) {
   const [allDay,      setAllDay]      = useState(event.allDay || false);
   const [customColor, setCustomColor] = useState(event.customColor || null);
   const [use24,       setUse24]       = useState(false);
+
+  const meta  = CATEGORY_META[event.card.category];
+  const color = customColor || meta.color;
+  const rgb   = hexToRgb(color);
 
   const duration = Math.max(0, endMins - startMins);
   const endBeforeStart = endMins <= startMins;
@@ -185,7 +187,7 @@ export function EventDetailModal({ event, onSave, onClose }) {
         exit={{ opacity: 0, scale: 0.92, y: 16 }}
         transition={{ type: 'spring', stiffness: 320, damping: 28 }}
         style={{
-          width: '100%', maxWidth: 500,
+          width: '100%', maxWidth: 720,
           background: 'linear-gradient(160deg, #0d0d1a 0%, #09090f 100%)',
           border: `1.5px solid rgba(${rgb},0.35)`,
           borderRadius: 24,
@@ -199,7 +201,7 @@ export function EventDetailModal({ event, onSave, onClose }) {
         {/* Header */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '18px 22px',
+          padding: '18px 32px',
           borderBottom: '1px solid rgba(255,255,255,0.07)',
           background: `rgba(${rgb},0.08)`,
           flexShrink: 0,
@@ -227,14 +229,20 @@ export function EventDetailModal({ event, onSave, onClose }) {
           </motion.button>
         </div>
 
-        {/* Scrollable form */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+        {/* Scrollable form — 2-column grid */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '22px 32px' }}>
 
-          {/* Title */}
-          <div>
+          {/* Activity Name — full width on top */}
+          <div style={{ marginBottom: 18 }}>
             <p style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', fontFamily: 'Space Grotesk', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Activity Name</p>
             <input type="text" value={label} onChange={e => setLabel(e.target.value)} style={inputStyle} onFocus={focus} onBlur={blur} />
           </div>
+
+          {/* Two-column body */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'start' }}>
+
+          {/* LEFT COLUMN — color, toggles, time */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
 
           {/* Event Color */}
           <div>
@@ -336,8 +344,10 @@ export function EventDetailModal({ event, onSave, onClose }) {
                 exit={{ opacity: 0, height: 0 }}
                 style={{ overflow: 'hidden' }}
               >
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 12, alignItems: 'end' }}>
                   <TimePicker label="Start Time" totalMinutes={startMins} onChange={setStartMins} color={color} rgb={rgb} use24={use24} />
+                  {/* Arrow between pickers */}
+                  <div style={{ paddingBottom: 10, fontSize: 20, color: '#475569', fontWeight: 900, textAlign: 'center' }}>➔</div>
                   <TimePicker label="End Time"   totalMinutes={endMins}   onChange={setEndMins}   color={color} rgb={rgb} use24={use24} />
                 </div>
 
@@ -365,31 +375,41 @@ export function EventDetailModal({ event, onSave, onClose }) {
             )}
           </AnimatePresence>
 
-          {/* Location */}
-          <div>
-            <p style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', fontFamily: 'Space Grotesk', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
-              <MapPin size={11} /> Location (optional)
-            </p>
-            <input type="text" value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. Central Park, Home, Gym..." style={inputStyle} onFocus={focus} onBlur={blur} />
-          </div>
+          </div>{/* end LEFT COLUMN */}
 
-          {/* Notes */}
-          <div>
-            <p style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', fontFamily: 'Space Grotesk', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
-              <AlignLeft size={11} /> Notes (optional)
-            </p>
-            <textarea
-              value={description} onChange={e => setDescription(e.target.value)}
-              placeholder="Add any notes about this activity..."
-              rows={3}
-              style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.6 }}
-              onFocus={focus} onBlur={blur}
-            />
-          </div>
+          {/* RIGHT COLUMN — Notes + Location */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+
+            {/* Notes */}
+            <div>
+              <p style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', fontFamily: 'Space Grotesk', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
+                <AlignLeft size={11} /> Notes (optional)
+              </p>
+              <textarea
+                value={description} onChange={e => setDescription(e.target.value)}
+                placeholder="Add any notes about this activity..."
+                rows={6}
+                style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.6, width: '100%' }}
+                onFocus={focus} onBlur={blur}
+              />
+            </div>
+
+            {/* Location */}
+            <div>
+              <p style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', fontFamily: 'Space Grotesk', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
+                <MapPin size={11} /> Location (optional)
+              </p>
+              <input type="text" value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. Central Park, Home, Gym..." style={inputStyle} onFocus={focus} onBlur={blur} />
+            </div>
+
+          </div>{/* end RIGHT COLUMN */}
+
+          </div>{/* end 2-column grid */}
+          <div style={{ height: 8 }} />
         </div>
 
         {/* Footer */}
-        <div style={{ display: 'flex', gap: 10, padding: '14px 22px 20px', borderTop: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
+        <div style={{ display: 'flex', gap: 12, padding: '16px 32px 24px', borderTop: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
           <button
             onClick={onClose}
             style={{ flex: 1, padding: '13px', borderRadius: 14, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', color: '#64748b', fontFamily: 'DM Sans', fontSize: 14, cursor: 'pointer' }}

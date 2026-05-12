@@ -89,8 +89,9 @@ export default function App() {
 
   // ── Auto-save when signed in and events change (debounced 3s) ──
   const autoSaveTimer = useRef(null);
+  const eventCount = timeline.events.length;
   useEffect(() => {
-    if (!account || timeline.events.length === 0) return;
+    if (!account || eventCount === 0) return;
     clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(async () => {
       try {
@@ -106,10 +107,10 @@ export default function App() {
         });
         setSaveStatus('saved');
         setTimeout(() => setSaveStatus(null), 2000);
-      } catch { /* silent auto-save failure */ }
+      } catch { /* silent */ }
     }, 3000);
     return () => clearTimeout(autoSaveTimer.current);
-  }, [account, timeline.events, timeline.predictions]);
+  }, [account, eventCount]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
   const handlePredictionResizeStart = useCallback((e) => {
