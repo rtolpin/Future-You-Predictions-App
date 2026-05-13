@@ -1,11 +1,12 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { GitBranch, Layers, LayoutDashboard, Sparkles, ChevronDown, ChevronUp, Settings2, Minimize2, X, Save, CalendarDays, LogOut, UserCircle } from 'lucide-react';
+import { GitBranch, Layers, LayoutDashboard, Sparkles, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Settings2, Minimize2, X, Save, CalendarDays, LogOut, UserCircle } from 'lucide-react';
 
 import { OnboardingForm } from './components/onboarding/OnboardingForm.jsx';
 import { DayCanvas } from './components/canvas/DayCanvas.jsx';
 import { ParallelDaysView } from './components/canvas/ParallelDaysView.jsx';
 import { PredictionPanel } from './components/prediction/PredictionPanel.jsx';
+import { DayPredictionFullscreen } from './components/prediction/DayPredictionFullscreen.jsx';
 import { AppearanceSelector } from './components/canvas/AppearanceSelector.jsx';
 import { BranchTreeView } from './components/tree/BranchTreeView.jsx';
 import { IdentityPanel } from './components/profile/IdentityPanel.jsx';
@@ -13,9 +14,10 @@ import { ProfileAvatar } from './components/profile/ProfileAvatar.jsx';
 import { DailySummary } from './components/summary/DailySummary.jsx';
 import { AuthModal } from './components/account/AuthModal.jsx';
 import { HistoryCalendar } from './components/account/HistoryCalendar.jsx';
-import { useTimeline } from './hooks/useTimeline.js';
-import { simulateDecision } from './utils/claudeClient.js';
+import { useTimeline, minutesToLabel } from './hooks/useTimeline.js';
+import { simulateDecision, simulateDayFlow } from './utils/claudeClient.js';
 import { authClient, daysClient } from './utils/accountClient.js';
+import { SimulationLoadingScreen } from './components/simulation/SimulationLoadingScreen.jsx';
 
 const VIEWS = {
   SINGLE: 'single',
@@ -42,12 +44,15 @@ export default function App() {
   const [selectedMood, setSelectedMood] = useState(null);
   const [predictionWidth, setPredictionWidth] = useState(320);
   const [predictionFullscreen, setPredictionFullscreen] = useState(false);
+  const [predictionOpen, setPredictionOpen] = useState(true);
+  const [dayPrediction, setDayPrediction] = useState(null);
   const [account, setAccount] = useState(() => {
     try { return JSON.parse(localStorage.getItem('future-you-account')) || null; } catch { return null; }
   });
   const [showAuth, setShowAuth] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null); // 'saving'|'saved'|'error'
+  const [simProgress, setSimProgress] = useState({ active: false, current: 0, total: 0, currentAction: '' });
 
   const timeline = useTimeline();
 
@@ -162,6 +167,33 @@ export default function App() {
     }
   }, [timeline, profile]);
 
+  const handleSimulateAll = useCallback(async () => {
+    const events = timeline.events;
+    if (!events || events.length === 0) return;
+    const sorted = [...events].sort((a, b) => a.startMinutes - b.startMinutes);
+    const eventPayload = sorted.map(e => ({
+      label: e.card.label,
+      time: minutesToLabel(e.startMinutes),
+      duration: e.durationMinutes,
+    }));
+    setSimProgress({ active: true, current: 1, total: 1, currentAction: 'your full day' });
+    try {
+      const result = await simulateDayFlow({
+        events: eventPayload,
+        profile,
+        mood: selectedMood,
+        outfits: selectedOutfits,
+      });
+      setDayPrediction(result);
+      setPredictionFullscreen(true);
+      setPredictionOpen(true);
+    } catch (err) {
+      console.error('SimulateAll error:', err);
+    } finally {
+      setSimProgress({ active: false, current: 0, total: 0, currentAction: '' });
+    }
+  }, [timeline.events, profile, selectedMood, selectedOutfits]);
+
   const handleSelectEvent = useCallback((eventId) => {
     setSelectedEventId(eventId);
   }, []);
@@ -179,6 +211,12 @@ export default function App() {
 
   return (
     <>
+    <SimulationLoadingScreen
+      active={simProgress.active}
+      current={simProgress.current}
+      total={simProgress.total}
+      currentAction={simProgress.currentAction}
+    />
     <div className="flex flex-col h-screen overflow-hidden" style={{ background: '#09090f' }}>
       {/* Background ambiance */}
       <div className="pointer-events-none fixed inset-0 z-0">
@@ -287,8 +325,9 @@ export default function App() {
               {/* Save Day */}
               <motion.button
                 onClick={handleSaveDay}
-                disabled={timeline.events.length === 0}
-                whileHover={timeline.events.length > 0 ? { scale: 1.03, boxShadow: '0 0 18px rgba(52,211,153,0.4)' } : {}}
+                disabled={!account || timeline.events.length === 0}
+                title={!account ? 'Sign in to save your day' : undefined}
+                whileHover={account && timeline.events.length > 0 ? { scale: 1.03, boxShadow: '0 0 18px rgba(52,211,153,0.4)' } : {}}
                 whileTap={{ scale: 0.97 }}
                 className="flex items-center gap-2 rounded-xl font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                 style={{
@@ -390,6 +429,7 @@ export default function App() {
                 <DayCanvas
                   timeline={timeline}
                   onSimulate={handleSimulate}
+                  onSimulateAll={handleSimulateAll}
                   onSelectEvent={handleSelectEvent}
                   selectedEventId={selectedEventId}
                   dayLabel={profile.name ? `${profile.name}'s Day` : 'My Day'}
@@ -401,31 +441,95 @@ export default function App() {
               </div>
               {/* Right panel — normal (non-fullscreen) mode only */}
               {!predictionFullscreen && (
-                <div
+                <motion.div
+                  animate={{ width: predictionOpen ? predictionWidth : 40 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                   className="shrink-0 flex flex-col overflow-hidden relative"
-                  style={{ width: predictionWidth, borderLeft: '1px solid rgba(255,255,255,0.06)', background: '#09090f' }}
+                  style={{ borderLeft: '1px solid rgba(255,255,255,0.06)', background: '#09090f', minWidth: 0 }}
                 >
-                  {/* Drag-to-resize handle */}
-                  <div
-                    onMouseDown={handlePredictionResizeStart}
-                    style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 6, cursor: 'col-resize', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                  >
-                    <div style={{ width: 2, height: 40, borderRadius: 2, background: 'rgba(255,255,255,0.08)', transition: 'background 0.2s' }}
-                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,212,177,0.5)'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
-                    />
-                  </div>
-                  <div className="flex-1 overflow-hidden">
-                    <PredictionPanel
-                      prediction={activePrediction}
-                      isLoading={isLoadingSlot}
-                      selectedSlot={selectedEventId}
-                      onClose={() => setSelectedEventId(null)}
-                      isFullscreen={false}
-                      onToggleFullscreen={() => setPredictionFullscreen(true)}
-                    />
-                  </div>
-                </div>
+                  {predictionOpen ? (
+                    <>
+                      {/* Drag-to-resize handle */}
+                      <div
+                        onMouseDown={handlePredictionResizeStart}
+                        style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 6, cursor: 'col-resize', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        <div style={{ width: 2, height: 40, borderRadius: 2, background: 'rgba(255,255,255,0.08)', transition: 'background 0.2s' }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,212,177,0.5)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+                        />
+                      </div>
+                      {/* Collapse button */}
+                      <div style={{ position: 'absolute', top: 14, left: 10, zIndex: 20 }}>
+                        <button
+                          onClick={() => setPredictionOpen(false)}
+                          title="Collapse prediction panel"
+                          style={{
+                            background: 'rgba(255,255,255,0.06)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: 6,
+                            padding: '3px 6px',
+                            cursor: 'pointer',
+                            color: 'rgba(255,255,255,0.4)',
+                            display: 'flex',
+                            alignItems: 'center',
+                          }}
+                        >
+                          <ChevronRight size={13} />
+                        </button>
+                      </div>
+                      <div className="flex-1 overflow-hidden" style={{ paddingLeft: 28 }}>
+                        <PredictionPanel
+                          prediction={activePrediction}
+                          dayPrediction={dayPrediction}
+                          isLoading={simProgress.active}
+                          selectedSlot={selectedEventId}
+                          onClose={() => setDayPrediction(null)}
+                          isFullscreen={false}
+                          onToggleFullscreen={() => setPredictionFullscreen(true)}
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    /* Collapsed rail */
+                    <div className="flex flex-col items-center h-full" style={{ width: 40, paddingTop: 12, gap: 0 }}>
+                      <button
+                        onClick={() => setPredictionOpen(true)}
+                        title="Expand prediction panel"
+                        style={{
+                          background: 'rgba(0,212,177,0.1)',
+                          border: '1px solid rgba(0,212,177,0.25)',
+                          borderRadius: 6,
+                          padding: '6px 7px',
+                          cursor: 'pointer',
+                          color: '#00d4b1',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          marginBottom: 10,
+                        }}
+                      >
+                        <ChevronLeft size={13} />
+                      </button>
+                      <div
+                        style={{
+                          writingMode: 'vertical-rl',
+                          transform: 'rotate(180deg)',
+                          fontSize: 10,
+                          fontWeight: 700,
+                          letterSpacing: '0.12em',
+                          textTransform: 'uppercase',
+                          color: 'rgba(0,212,177,0.35)',
+                          userSelect: 'none',
+                          marginTop: 4,
+                        }}
+                      >
+                        AI Prediction
+                      </div>
+                      <Sparkles size={13} style={{ color: 'rgba(0,212,177,0.2)', marginTop: 10 }} />
+                    </div>
+                  )}
+                </motion.div>
               )}
             </motion.div>
           )}
@@ -537,80 +641,15 @@ export default function App() {
         )}
       </AnimatePresence>
     </div>
-    {/* ── Prediction fullscreen overlay — rendered OUTSIDE the app stacking context ── */}
+    {/* ── Day prediction fullscreen overlay ── */}
     <AnimatePresence>
-      {predictionFullscreen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          style={{
-            position: 'fixed', inset: 0,
-            zIndex: 99999,
-            background: '#09090f',
-            display: 'flex', flexDirection: 'column',
-          }}
-        >
-          {/* Top bar */}
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '16px 24px', flexShrink: 0,
-            background: 'rgba(9,9,15,0.98)',
-            borderBottom: '2px solid rgba(0,212,177,0.2)',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(135deg,rgba(0,212,177,0.25),rgba(167,139,250,0.2))', border: '1px solid rgba(0,212,177,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Sparkles size={18} color="#00d4b1" />
-              </div>
-              <div>
-                <p style={{ fontSize: 16, fontWeight: 800, color: '#f1f5f9', fontFamily: 'Space Grotesk', lineHeight: 1.2 }}>AI Prediction</p>
-                <p style={{ fontSize: 12, color: '#64748b', lineHeight: 1, marginTop: 2 }}>Full screen view</p>
-              </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              {activePrediction && (
-                <motion.button
-                  onClick={() => { setSelectedEventId(null); setPredictionFullscreen(false); }}
-                  whileHover={{ scale: 1.04, background: 'rgba(255,255,255,0.1)' }}
-                  whileTap={{ scale: 0.96 }}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 8, padding: '11px 20px',
-                    borderRadius: 12, border: '1.5px solid rgba(255,255,255,0.18)',
-                    background: 'rgba(255,255,255,0.07)', cursor: 'pointer',
-                    color: '#cbd5e1', fontFamily: 'Space Grotesk', fontSize: 14, fontWeight: 700,
-                  }}
-                >
-                  <X size={15} /> Close Prediction
-                </motion.button>
-              )}
-              <motion.button
-                onClick={() => setPredictionFullscreen(false)}
-                whileHover={{ scale: 1.04, background: 'rgba(248,113,113,0.25)' }}
-                whileTap={{ scale: 0.96 }}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 8, padding: '11px 22px',
-                  borderRadius: 12, border: '2px solid rgba(248,113,113,0.55)',
-                  background: 'rgba(248,113,113,0.15)', cursor: 'pointer',
-                  color: '#fca5a5', fontFamily: 'Space Grotesk', fontSize: 14, fontWeight: 800,
-                }}
-              >
-                <Minimize2 size={16} /> Exit Full Screen
-              </motion.button>
-            </div>
-          </div>
-
-          {/* Prediction content */}
-          <div style={{ flex: 1, overflow: 'hidden' }}>
-            <PredictionPanel
-              prediction={activePrediction}
-              isLoading={isLoadingSlot}
-              selectedSlot={selectedEventId}
-              onClose={() => setSelectedEventId(null)}
-              isFullscreen={true}
-              onToggleFullscreen={() => setPredictionFullscreen(false)}
-            />
-          </div>
-        </motion.div>
+      {predictionFullscreen && dayPrediction && (
+        <DayPredictionFullscreen
+          prediction={dayPrediction}
+          eventCount={timeline.events.length}
+          onMinimize={() => setPredictionFullscreen(false)}
+          onClose={() => setPredictionFullscreen(false)}
+        />
       )}
     </AnimatePresence>
     </>

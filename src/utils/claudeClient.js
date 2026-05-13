@@ -45,6 +45,16 @@ export async function simulateDecisionStream({ action, timeSlot, profile, previo
   }
 }
 
+export async function simulateDayFlow({ events, profile, mood, outfits }) {
+  const res = await fetch(`${API_BASE}/simulate/day`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ events, profile, mood, outfits }),
+  });
+  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  return res.json();
+}
+
 export async function generateDailySummary({ choices, profile }) {
   const res = await fetch(`${API_BASE}/simulate/summary`, {
     method: 'POST',

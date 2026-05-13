@@ -1,8 +1,10 @@
 import Anthropic from '@anthropic-ai/sdk';
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const MODEL = 'claude-sonnet-4-5';
 
-const MODEL = 'claude-sonnet-4-20250514';
+function getClient() {
+  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+}
 
 function buildSystemPrompt(profile) {
   return `You are "Future You" — an empathetic, insightful AI life simulator. Your job is to help users understand how their daily choices shape their emotional state, social environment, and long-term identity.
@@ -50,7 +52,7 @@ Be specific, empathetic, and grounded. Return ONLY valid JSON.`;
 }
 
 export async function simulateDecision({ action, timeSlot, profile, previousChoices, appearance }) {
-  const response = await anthropic.messages.create({
+  const response = await getClient().messages.create({
     model: MODEL,
     max_tokens: 1024,
     system: buildSystemPrompt(profile),
@@ -64,7 +66,7 @@ export async function simulateDecision({ action, timeSlot, profile, previousChoi
 }
 
 export async function simulateDecisionStream({ action, timeSlot, profile, previousChoices, appearance, res }) {
-  const stream = anthropic.messages.stream({
+  const stream = getClient().messages.stream({
     model: MODEL,
     max_tokens: 1024,
     system: buildSystemPrompt(profile),
@@ -101,6 +103,60 @@ export async function simulateDecisionStream({ action, timeSlot, profile, previo
   });
 }
 
+export async function simulateDayFlow({ events, profile, mood, outfits }) {
+  const eventList = events
+    .map(e => `- ${e.time}: ${e.label}${e.duration ? ` (${e.duration} min)` : ''}`)
+    .join('\n');
+
+  const prompt = `You are simulating a complete day for the user. Here are ALL their planned activities in chronological order:
+
+${eventList}
+
+User Profile:
+- City: ${profile?.city || 'New York'}
+- Age: ${profile?.age || 'unknown'}
+- Starting Mood: ${mood || profile?.mood || 'neutral'}
+- Outfit(s): ${outfits?.length ? outfits.join(', ') : 'unspecified'}
+- Other details: ${JSON.stringify(profile || {})}
+- Date: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+
+Create a vivid, holistic day simulation. Each activity must be understood in context of the FULL day — how it connects to what came before and after. Be specific to their city, time of day, and personal profile. Return ONLY valid JSON in this exact format:
+
+{
+  "dayTitle": "A poetic, evocative 3-5 word title for today (e.g. 'The Grounded Builder', 'A Social Storm', 'Quiet Power Day')",
+  "dayOpening": "2-3 sentences painting the emotional texture of this entire day — what kind of day is this and what overarching feeling will define it?",
+  "eventFlow": [
+    {
+      "label": "exact event label from the list above",
+      "time": "HH:MM",
+      "insight": "2-3 sentences: what this moment feels like, who or what is around them, and how it connects to the rest of the day's flow"
+    }
+  ],
+  "momentum": "2-3 sentences describing the narrative arc of the day — how the activities build on each other and create cumulative energy or drag",
+  "endOfDay": "2-3 sentences: how they feel by evening — physical energy, emotional state, sense of accomplishment or regret",
+  "identity": "1-2 powerful sentences: what this day, repeated over time, says about who they are becoming",
+  "scores": {
+    "energy": <integer 0-10>,
+    "mood": <integer 0-10>,
+    "productivity": <integer 0-10>,
+    "social": <integer 0-10>,
+    "overall": <integer 0-10>
+  },
+  "thirtyDayImpact": "2-3 sentences: if they repeat this exact day pattern for 30 days, who do they become and what tangibly changes in their life?"
+}`;
+
+  const response = await getClient().messages.create({
+    model: MODEL,
+    max_tokens: 2048,
+    messages: [{ role: 'user', content: prompt }],
+  });
+
+  const text = response.content[0].text.trim();
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error('No JSON in response');
+  return JSON.parse(jsonMatch[0]);
+}
+
 export async function generateDailySummary({ choices, profile }) {
   const prompt = `The user completed a simulated day with these choices:
 ${choices.map((c, i) => `${i + 1}. ${c.time}: ${c.action}`).join('\n')}
@@ -126,7 +182,7 @@ Generate a "Who You Are Becoming" daily summary in this EXACT JSON format:
 
 Return ONLY valid JSON.`;
 
-  const response = await anthropic.messages.create({
+  const response = await getClient().messages.create({
     model: MODEL,
     max_tokens: 800,
     messages: [{ role: 'user', content: prompt }],

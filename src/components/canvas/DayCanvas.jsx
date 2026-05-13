@@ -16,7 +16,7 @@ import {
   useSensor, useSensors, useDroppable,
 } from '@dnd-kit/core';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, RotateCcw, Clock, Maximize2, Minimize2 } from 'lucide-react';
+import { Play, RotateCcw, Clock, Maximize2, Minimize2, ChevronLeft, ChevronRight, LayoutList } from 'lucide-react';
 import { DecisionCard } from './DecisionCard.jsx';
 import { CardLibrary } from './CardLibrary.jsx';
 import { EventBlock } from './EventBlock.jsx';
@@ -24,10 +24,10 @@ import { AppearanceSelector } from './AppearanceSelector.jsx';
 import { MoodStarterSelector } from './MoodStarterSelector.jsx';
 import { CATEGORY_META } from '../../data/decisionCards.js';
 import { EventDetailModal } from './EventDetailModal.jsx';
-import { minutesToLabel } from '../../hooks/useTimeline.js';
 
 const HOUR_HEIGHT = 80;
 const SNAP = 15;
+
 
 function SlotDropZone({ minutes, isDraggingAny, startHour }) {
   const { isOver, setNodeRef } = useDroppable({ id: `slot-${minutes}` });
@@ -113,12 +113,13 @@ function hexToRgbStr(hex) {
   return r ? `${parseInt(r[1], 16)},${parseInt(r[2], 16)},${parseInt(r[3], 16)}` : '255,255,255';
 }
 
-export function DayCanvas({ timeline, onSimulate, onSelectEvent, selectedEventId, dayLabel = 'My Day', dayColor = '#00d4b1', selectedOutfits = [], onOutfitsChange, selectedMood, onMoodChange, defaultPanelsOpen = true }) {
+export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, selectedEventId, dayLabel = 'My Day', dayColor = '#00d4b1', selectedOutfits = [], onOutfitsChange, selectedMood, onMoodChange, defaultPanelsOpen = true }) {
   const [activeCard, setActiveCard] = useState(null);
   const [scrolled, setScrolled] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const [moodOpen, setMoodOpen] = useState(defaultPanelsOpen);
   const [outfitOpen, setOutfitOpen] = useState(defaultPanelsOpen);
+  const [libraryOpen, setLibraryOpen] = useState(true);
   const [editingEvent, setEditingEvent] = useState(null);
   const [startHour, setStartHour] = useState(5);
   const [endHour, setEndHour] = useState(24);
@@ -172,35 +173,13 @@ export function DayCanvas({ timeline, onSimulate, onSelectEvent, selectedEventId
     const startMinutes = parseInt(over.id.toString().replace('slot-', ''), 10);
 
     if (active.data.current?.type === 'event') {
-      // Move existing event to new time
       timeline.moveEvent(active.data.current.eventId, startMinutes);
     } else {
-      // Drop new card from library
       const card = active.data.current?.card;
       if (!card) return;
       timeline.addEvent(startMinutes, card, 60);
     }
   }, [timeline]);
-
-  const handleSimulateDay = useCallback(async () => {
-    const sorted = [...timeline.events].sort((a, b) => a.startMinutes - b.startMinutes);
-    for (const evt of sorted) {
-      const previousChoices = timeline.events
-        .filter(e => e.startMinutes < evt.startMinutes)
-        .map(e => e.card.label);
-      const appearance = timeline.events
-        .filter(e => e.card.category === 'appearance' && e.startMinutes <= evt.startMinutes)
-        .pop()?.card.label;
-      await onSimulate?.({
-        eventId: evt.id,
-        timeKey: evt.id,
-        label: minutesToLabel(evt.startMinutes),
-        action: evt.card.label,
-        appearance,
-        previousChoices,
-      });
-    }
-  }, [timeline, onSimulate]);
 
   const filledCount = timeline.events.length;
 
@@ -213,18 +192,93 @@ export function DayCanvas({ timeline, onSimulate, onSelectEvent, selectedEventId
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <div className={outerClass} style={{ background: '#09090f' }}>
 
-        {/* Card Library — hidden in fullscreen, scroll locked while dragging */}
+        {/* Card Library — hidden in fullscreen, collapsible */}
         {!fullscreen && (
-          <div
-            className="w-64 shrink-0 overflow-hidden"
+          <motion.div
+            animate={{ width: libraryOpen ? 256 : 40 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            className="shrink-0 overflow-hidden flex flex-col"
             style={{
               borderRight: '1px solid rgba(255,255,255,0.06)',
               background: 'rgba(0,0,0,0.25)',
-              overflowY: activeCard ? 'hidden' : 'auto',
+              minWidth: 0,
             }}
           >
-            <CardLibrary />
-          </div>
+            {libraryOpen ? (
+              /* ── Expanded library ── */
+              <div
+                className="flex flex-col h-full"
+                style={{ width: 256, overflowY: activeCard ? 'hidden' : 'auto' }}
+              >
+                {/* Library header with collapse button */}
+                <div
+                  className="flex items-center justify-between shrink-0"
+                  style={{ padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+                >
+                  <span className="text-xs font-semibold tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                    Card Library
+                  </span>
+                  <button
+                    onClick={() => setLibraryOpen(false)}
+                    title="Collapse library"
+                    style={{
+                      background: 'rgba(255,255,255,0.06)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: 6,
+                      padding: '3px 6px',
+                      cursor: 'pointer',
+                      color: 'rgba(255,255,255,0.5)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 3,
+                    }}
+                  >
+                    <ChevronLeft size={13} />
+                  </button>
+                </div>
+                <CardLibrary />
+              </div>
+            ) : (
+              /* ── Collapsed slim rail ── */
+              <div className="flex flex-col items-center h-full" style={{ width: 40, paddingTop: 12, gap: 0 }}>
+                <button
+                  onClick={() => setLibraryOpen(true)}
+                  title="Expand library"
+                  style={{
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 6,
+                    padding: '6px 7px',
+                    cursor: 'pointer',
+                    color: 'rgba(255,255,255,0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: 10,
+                  }}
+                >
+                  <ChevronRight size={13} />
+                </button>
+                {/* Rotated label */}
+                <div
+                  style={{
+                    writingMode: 'vertical-rl',
+                    transform: 'rotate(180deg)',
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    color: 'rgba(255,255,255,0.2)',
+                    userSelect: 'none',
+                    marginTop: 4,
+                  }}
+                >
+                  Cards
+                </div>
+                <LayoutList size={14} style={{ color: 'rgba(255,255,255,0.15)', marginTop: 10 }} />
+              </div>
+            )}
+          </motion.div>
         )}
 
         {/* Calendar timeline */}
@@ -339,14 +393,40 @@ export function DayCanvas({ timeline, onSimulate, onSelectEvent, selectedEventId
               </motion.button>
 
               <motion.button
-                onClick={handleSimulateDay}
+                onClick={() => onSimulateAll?.()}
                 disabled={filledCount === 0}
-                whileHover={filledCount > 0 ? { scale: 1.03, boxShadow: `0 0 20px ${dayColor}60` } : {}}
-                whileTap={{ scale: 0.97 }}
-                className="flex items-center font-bold text-black transition-all disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
-                style={{ gap: 7, padding: '8px 16px', background: `linear-gradient(135deg, ${dayColor}, ${dayColor}cc)`, boxShadow: filledCount > 0 ? `0 0 12px ${dayColor}40` : 'none', borderRadius: 12, fontSize: 12 }}
+                whileHover={filledCount > 0 ? { scale: 1.04, boxShadow: '0 0 28px rgba(0,212,177,0.55), 0 0 60px rgba(0,212,177,0.2)' } : {}}
+                whileTap={{ scale: 0.96 }}
+                className="relative overflow-hidden flex items-center font-bold text-black disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
+                style={{
+                  gap: 8, padding: '9px 20px',
+                  background: filledCount > 0
+                    ? 'linear-gradient(135deg, #00d4b1 0%, #00bfa0 40%, #34d399 100%)'
+                    : 'rgba(0,212,177,0.3)',
+                  boxShadow: filledCount > 0 ? '0 0 16px rgba(0,212,177,0.5), inset 0 1px 0 rgba(255,255,255,0.25)' : 'none',
+                  borderRadius: 14, fontSize: 13,
+                  border: '1px solid rgba(255,255,255,0.2)',
+                }}
               >
-                <Play size={12} fill="currentColor" /> Simulate Day
+                {/* Shimmer */}
+                {filledCount > 0 && (
+                  <motion.div
+                    className="absolute inset-0 pointer-events-none"
+                    style={{ background: 'linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.3) 50%, transparent 65%)' }}
+                    animate={{ x: ['-100%', '200%'] }}
+                    transition={{ duration: 2.2, repeat: Infinity, ease: 'linear', repeatDelay: 1.5 }}
+                  />
+                )}
+                <motion.span
+                  animate={filledCount > 0 ? { rotate: [0, 0, 360] } : {}}
+                  transition={{ duration: 3, repeat: Infinity, repeatDelay: 4, ease: 'easeInOut' }}
+                >
+                  <Play size={13} fill="currentColor" />
+                </motion.span>
+                <span style={{ position: 'relative', zIndex: 1, letterSpacing: '0.02em' }}>Simulate Day</span>
+                {filledCount > 0 && (
+                  <span style={{ position: 'relative', zIndex: 1, background: 'rgba(0,0,0,0.2)', borderRadius: 6, padding: '1px 6px', fontSize: 10, fontWeight: 900 }}>{filledCount}</span>
+                )}
               </motion.button>
             </div>
           </div>
@@ -561,6 +641,7 @@ export function DayCanvas({ timeline, onSimulate, onSelectEvent, selectedEventId
           );
         })()}
       </DragOverlay>
+
     </DndContext>
 
     {/* Event detail modal */}
