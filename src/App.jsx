@@ -543,7 +543,7 @@ export default function App() {
               transition={{ duration: 0.25 }}
               className="h-full"
             >
-              <ParallelDaysView profile={profile} count={2} />
+              <ParallelDaysView profile={profile} count={2} mood={selectedMood} outfits={selectedOutfits} />
             </motion.div>
           )}
 
