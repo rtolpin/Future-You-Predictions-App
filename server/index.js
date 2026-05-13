@@ -36,7 +36,7 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok', env: IS_PROD ? 'pr
 if (IS_PROD) {
   const distPath = join(__dirname, '../dist');
   app.use(express.static(distPath));
-  app.get('*', (req, res) => res.sendFile(join(distPath, 'index.html')));
+  app.get('{*path}', (req, res) => res.sendFile(join(distPath, 'index.html')));
 }
 
 app.listen(PORT, () => {
