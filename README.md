@@ -2,7 +2,7 @@
 
 <div align="center">
 
-### 🌐 **[LIVE APP → https://future-you-predictions-app.up.railway.app](https://future-you-predictions-app.up.railway.app)**
+### 🌐 **LIVE APP → [https://future-you-predictions-app.up.railway.app](https://future-you-predictions-app.up.railway.app)**
 
 *Simulate your future. Build your identity. Decide who you become.*
 
