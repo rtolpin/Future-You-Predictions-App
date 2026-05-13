@@ -7,6 +7,7 @@ import { DayCanvas } from './components/canvas/DayCanvas.jsx';
 import { ParallelDaysView } from './components/canvas/ParallelDaysView.jsx';
 import { PredictionPanel } from './components/prediction/PredictionPanel.jsx';
 import { DayPredictionFullscreen } from './components/prediction/DayPredictionFullscreen.jsx';
+import { DayComparisonFullscreen } from './components/prediction/DayComparisonFullscreen.jsx';
 import { AppearanceSelector } from './components/canvas/AppearanceSelector.jsx';
 import { BranchTreeView } from './components/tree/BranchTreeView.jsx';
 import { IdentityPanel } from './components/profile/IdentityPanel.jsx';
@@ -27,8 +28,8 @@ const VIEWS = {
 
 const VIEW_CONFIG = [
   { id: VIEWS.SINGLE, icon: <LayoutDashboard size={13} />, label: 'Day Canvas' },
-  { id: VIEWS.PARALLEL, icon: <Layers size={13} />, label: 'Parallel' },
-  { id: VIEWS.TREE, icon: <GitBranch size={13} />, label: 'Tree' },
+  { id: VIEWS.PARALLEL, icon: <Layers size={13} />, label: 'Parallel Days Comparison' },
+  { id: VIEWS.TREE, icon: <GitBranch size={13} />, label: 'Day Decisions Tree Builder' },
 ];
 
 export default function App() {
@@ -46,6 +47,9 @@ export default function App() {
   const [predictionFullscreen, setPredictionFullscreen] = useState(false);
   const [predictionOpen, setPredictionOpen] = useState(true);
   const [dayPrediction, setDayPrediction] = useState(null);
+  const [treeData, setTreeData] = useState(null);
+  const [parallelFullscreen, setParallelFullscreen] = useState(null); // { type: 'single'|'compare', data, meta }
+
   const [account, setAccount] = useState(() => {
     try { return JSON.parse(localStorage.getItem('future-you-account')) || null; } catch { return null; }
   });
@@ -412,18 +416,12 @@ export default function App() {
         </div>
       </header>
 
-      {/* ── Main content ── */}
+      {/* ── Main content — all views always mounted; CSS show/hide preserves state ── */}
       <main className="flex-1 relative z-10 overflow-hidden">
-        <AnimatePresence mode="wait">
-          {view === VIEWS.SINGLE && (
-            <motion.div
-              key="single"
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              transition={{ duration: 0.25 }}
-              className="h-full flex"
-            >
+          <div
+            className="h-full flex"
+            style={{ display: view === VIEWS.SINGLE ? 'flex' : 'none' }}
+          >
               {/* Day Canvas */}
               <div className="flex-1 overflow-hidden" style={{ borderRight: '1px solid rgba(255,255,255,0.06)' }}>
                 <DayCanvas
@@ -531,50 +529,52 @@ export default function App() {
                   )}
                 </motion.div>
               )}
-            </motion.div>
-          )}
+          </div>
 
-          {view === VIEWS.PARALLEL && (
-            <motion.div
-              key="parallel"
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              transition={{ duration: 0.25 }}
-              className="h-full"
-            >
-              <ParallelDaysView profile={profile} count={2} mood={selectedMood} outfits={selectedOutfits} />
-            </motion.div>
-          )}
+          <div
+            className="h-full"
+            style={{ display: view === VIEWS.PARALLEL ? 'flex' : 'none', flexDirection: 'column' }}
+          >
+            <ParallelDaysView
+              profile={profile}
+              count={2}
+              mood={selectedMood}
+              outfits={selectedOutfits}
+              onTreeData={setTreeData}
+              onShowFullscreen={setParallelFullscreen}
+            />
+          </div>
 
-          {view === VIEWS.TREE && (
-            <motion.div
-              key="tree"
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              transition={{ duration: 0.25 }}
-              className="h-full flex"
-            >
-              <div className="flex-1 overflow-hidden">
-                <BranchTreeView
-                  slots={timeline.slots}
-                  predictions={timeline.predictions}
-                  onNodeClick={handleNodeClick}
+          <div
+            className="h-full flex"
+            style={{ display: view === VIEWS.TREE ? 'flex' : 'none' }}
+          >
+            <div className="flex-1 overflow-hidden">
+              <BranchTreeView
+                slots={timeline.slots}
+                predictions={timeline.predictions}
+                events={timeline.events}
+                dayPrediction={dayPrediction}
+                treeData={treeData}
+                onNodeClick={handleNodeClick}
+                profile={profile}
+                mood={selectedMood}
+                outfits={selectedOutfits}
+              />
+            </div>
+            {activePrediction && (
+              <div className="w-80 shrink-0" style={{ borderLeft: '1px solid rgba(255,255,255,0.06)' }}>
+                <PredictionPanel
+                  prediction={activePrediction}
+                  dayPrediction={dayPrediction}
+                  isLoading={false}
+                  selectedSlot={selectedEventId}
+                  onClose={() => setSelectedEventId(null)}
+                  onToggleFullscreen={() => setPredictionFullscreen(true)}
                 />
               </div>
-              {activePrediction && (
-                <div className="w-80 shrink-0" style={{ borderLeft: '1px solid rgba(255,255,255,0.06)' }}>
-                  <PredictionPanel
-                    prediction={activePrediction}
-                    selectedSlot={selectedSlot}
-                    onClose={() => setSelectedEventId(null)}
-                  />
-                </div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+            )}
+          </div>
       </main>
 
       {/* ── Collapsible tree strip ── */}
@@ -641,7 +641,7 @@ export default function App() {
         )}
       </AnimatePresence>
     </div>
-    {/* ── Day prediction fullscreen overlay ── */}
+    {/* ── Day Canvas prediction fullscreen ── */}
     <AnimatePresence>
       {predictionFullscreen && dayPrediction && (
         <DayPredictionFullscreen
@@ -649,6 +649,30 @@ export default function App() {
           eventCount={timeline.events.length}
           onMinimize={() => setPredictionFullscreen(false)}
           onClose={() => setPredictionFullscreen(false)}
+        />
+      )}
+    </AnimatePresence>
+
+    {/* ── Parallel view fullscreens — rendered outside main stacking context ── */}
+    <AnimatePresence>
+      {parallelFullscreen?.type === 'single' && (
+        <DayPredictionFullscreen
+          prediction={parallelFullscreen.data.prediction}
+          eventCount={parallelFullscreen.data.eventCount}
+          onMinimize={() => setParallelFullscreen(null)}
+          onClose={() => setParallelFullscreen(null)}
+        />
+      )}
+    </AnimatePresence>
+    <AnimatePresence>
+      {parallelFullscreen?.type === 'compare' && (
+        <DayComparisonFullscreen
+          result={parallelFullscreen.data.result}
+          pathALabel={parallelFullscreen.data.pathALabel}
+          pathBLabel={parallelFullscreen.data.pathBLabel}
+          colorA={parallelFullscreen.data.colorA}
+          colorB={parallelFullscreen.data.colorB}
+          onClose={() => setParallelFullscreen(null)}
         />
       )}
     </AnimatePresence>

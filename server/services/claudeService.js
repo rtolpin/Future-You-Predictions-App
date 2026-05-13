@@ -157,6 +157,132 @@ Create a vivid, holistic day simulation. Each activity must be understood in con
   return JSON.parse(jsonMatch[0]);
 }
 
+export async function compareDays({ pathA, pathB, profile, mood, outfits }) {
+  const fmt = (path) => path.events
+    .map(e => `  - ${e.time}: ${e.label}${e.duration ? ` (${e.duration} min)` : ''}`)
+    .join('\n');
+
+  const prompt = `You are comparing two completely different days for the same person. Simulate both days AND produce a detailed head-to-head comparison.
+
+USER PROFILE:
+- City: ${profile?.city || 'New York'}
+- Age: ${profile?.age || 'unspecified'}
+- Starting Mood: ${mood || 'neutral'}
+- Outfit(s): ${outfits?.length ? outfits.join(', ') : 'unspecified'}
+- Date: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+
+PATH A — "${pathA.label}":
+${fmt(pathA)}
+
+PATH B — "${pathB.label}":
+${fmt(pathB)}
+
+Simulate both days fully, then compare them head-to-head. Return ONLY valid JSON in this exact format:
+
+{
+  "pathA": {
+    "dayTitle": "poetic 3-5 word title",
+    "dayOpening": "2-3 sentences painting the emotional texture of this day",
+    "eventFlow": [{ "label": "event label", "time": "HH:MM", "insight": "2-3 sentences in context of the full day" }],
+    "momentum": "2-3 sentences on how the day builds",
+    "endOfDay": "2-3 sentences on how they feel by evening",
+    "identity": "1-2 sentences on who they're becoming",
+    "scores": { "energy": 0-10, "mood": 0-10, "productivity": 0-10, "social": 0-10, "overall": 0-10 },
+    "thirtyDayImpact": "2-3 sentences on 30-day projection"
+  },
+  "pathB": {
+    "dayTitle": "poetic 3-5 word title",
+    "dayOpening": "2-3 sentences",
+    "eventFlow": [{ "label": "event label", "time": "HH:MM", "insight": "2-3 sentences" }],
+    "momentum": "2-3 sentences",
+    "endOfDay": "2-3 sentences",
+    "identity": "1-2 sentences",
+    "scores": { "energy": 0-10, "mood": 0-10, "productivity": 0-10, "social": 0-10, "overall": 0-10 },
+    "thirtyDayImpact": "2-3 sentences"
+  },
+  "comparison": {
+    "headline": "1 punchy sentence capturing the core difference between these two days",
+    "winner": "A" or "B" or "tie",
+    "winnerReason": "2-3 sentences explaining which path wins overall and why",
+    "dimensions": [
+      { "label": "Energy & Body", "edgeWinner": "A" or "B" or "tie", "pathASummary": "1 sentence", "pathBSummary": "1 sentence" },
+      { "label": "Mental Focus", "edgeWinner": "A" or "B" or "tie", "pathASummary": "1 sentence", "pathBSummary": "1 sentence" },
+      { "label": "Emotional Mood", "edgeWinner": "A" or "B" or "tie", "pathASummary": "1 sentence", "pathBSummary": "1 sentence" },
+      { "label": "Social Connection", "edgeWinner": "A" or "B" or "tie", "pathASummary": "1 sentence", "pathBSummary": "1 sentence" },
+      { "label": "Long-term Identity", "edgeWinner": "A" or "B" or "tie", "pathASummary": "1 sentence", "pathBSummary": "1 sentence" }
+    ],
+    "pathAStrengths": ["strength 1", "strength 2", "strength 3"],
+    "pathBStrengths": ["strength 1", "strength 2", "strength 3"],
+    "recommendation": "2-3 sentences: who should choose Path A vs Path B — frame it around different personality types, life stages, or current priorities"
+  }
+}`;
+
+  const response = await getClient().messages.create({
+    model: MODEL,
+    max_tokens: 4096,
+    messages: [{ role: 'user', content: prompt }],
+  });
+
+  const text = response.content[0].text.trim();
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error('No JSON in response');
+  return JSON.parse(jsonMatch[0]);
+}
+
+export async function simulateDecisionTree({ paths, nodeLabels, profile, mood, outfits }) {
+  const pathText = paths.map((p, i) =>
+    `Path ${i + 1}: ${p.join(' → ')}`
+  ).join('\n');
+
+  const prompt = `You are analyzing a Day Decision Tree the user has built. Each path represents a possible sequence of activities.
+
+USER PROFILE:
+- City: ${profile?.city || 'New York'}
+- Age: ${profile?.age || 'unspecified'}
+- Starting Mood: ${mood || 'neutral'}
+- Outfit(s): ${outfits?.length ? outfits.join(', ') : 'unspecified'}
+- Date: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+
+DECISION TREE PATHS:
+${pathText}
+
+Simulate every path, compare them, and provide actionable suggestions. Return ONLY valid JSON:
+
+{
+  "treeTitle": "A poetic 3-5 word title capturing the theme of this decision tree",
+  "overallWisdom": "2-3 sentences of big-picture insight about the choices represented in this tree",
+  "pathAnalyses": [
+    {
+      "pathIndex": 0,
+      "pathLabel": "Path 1",
+      "narrative": "3-4 sentences: what this sequence of choices feels like as a lived day",
+      "endOfDay": "How they feel by evening on this path",
+      "scores": { "energy": 0-10, "mood": 0-10, "productivity": 0-10, "social": 0-10, "overall": 0-10 },
+      "identity": "1 sentence: who this path shapes them into"
+    }
+  ],
+  "bestPathIndex": 0,
+  "bestPathReason": "2-3 sentences explaining which path wins and why",
+  "nodeInsights": [
+    { "label": "exact activity label", "insight": "1-2 sentences specific to this activity in context", "score": 0-10 }
+  ],
+  "suggestions": [
+    { "afterLabel": "exact activity label", "suggestedActivity": "what to do next", "emoji": "emoji", "reason": "1-2 sentences why" }
+  ]
+}`;
+
+  const response = await getClient().messages.create({
+    model: MODEL,
+    max_tokens: 3000,
+    messages: [{ role: 'user', content: prompt }],
+  });
+
+  const text = response.content[0].text.trim();
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error('No JSON in response');
+  return JSON.parse(jsonMatch[0]);
+}
+
 export async function generateDailySummary({ choices, profile }) {
   const prompt = `The user completed a simulated day with these choices:
 ${choices.map((c, i) => `${i + 1}. ${c.time}: ${c.action}`).join('\n')}

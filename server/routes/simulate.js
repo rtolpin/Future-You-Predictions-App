@@ -1,5 +1,5 @@
 import express from 'express';
-import { simulateDecision, simulateDecisionStream, generateDailySummary, simulateDayFlow } from '../services/claudeService.js';
+import { simulateDecision, simulateDecisionStream, generateDailySummary, simulateDayFlow, compareDays, simulateDecisionTree } from '../services/claudeService.js';
 
 const router = express.Router();
 
@@ -23,6 +23,26 @@ router.post('/day', async (req, res) => {
     res.json(result);
   } catch (err) {
     console.error('Day simulation error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/compare', async (req, res) => {
+  try {
+    const result = await compareDays(req.body);
+    res.json(result);
+  } catch (err) {
+    console.error('Compare error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/tree', async (req, res) => {
+  try {
+    const result = await simulateDecisionTree(req.body);
+    res.json(result);
+  } catch (err) {
+    console.error('Tree simulation error:', err);
     res.status(500).json({ error: err.message });
   }
 });

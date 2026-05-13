@@ -13,7 +13,7 @@ function useHoldButton(action, delay = 120) {
 }
 import {
   DndContext, DragOverlay, PointerSensor, TouchSensor,
-  useSensor, useSensors, useDroppable,
+  useSensor, useSensors, useDroppable, closestCenter,
 } from '@dnd-kit/core';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, RotateCcw, Clock, Maximize2, Minimize2, ChevronLeft, ChevronRight, LayoutList } from 'lucide-react';
@@ -29,10 +29,11 @@ const HOUR_HEIGHT = 80;
 const SNAP = 15;
 
 
-function SlotDropZone({ minutes, isDraggingAny, startHour }) {
-  const { isOver, setNodeRef } = useDroppable({ id: `slot-${minutes}` });
+const SLOT_HEIGHT = HOUR_HEIGHT / 2; // 40px per 15-min slot — large target area
+
+function SlotDropZone({ minutes, isDraggingAny, startHour, idPrefix = '', fmtTime }) {
+  const { isOver, setNodeRef } = useDroppable({ id: `${idPrefix}slot-${minutes}` });
   const top = (minutes - startHour * 60) / 60 * HOUR_HEIGHT;
-  const isHour = minutes % 60 === 0;
 
   return (
     <div
@@ -42,23 +43,35 @@ function SlotDropZone({ minutes, isDraggingAny, startHour }) {
         top,
         left: 0,
         right: 0,
-        height: HOUR_HEIGHT / 2, // 30-min zones — easier to target
-        zIndex: 1,
-        borderRadius: 6,
-        transition: 'all 0.1s',
-        background: isOver
-          ? 'rgba(0,212,177,0.18)'
-          : isDraggingAny && isHour
-          ? 'rgba(255,255,255,0.03)'
-          : 'transparent',
-        border: isOver
-          ? '2px dashed rgba(0,212,177,0.7)'
-          : isDraggingAny
-          ? '1px dashed rgba(255,255,255,0.1)'
-          : '1px solid transparent',
-        boxShadow: isOver ? '0 0 12px rgba(0,212,177,0.2)' : 'none',
+        height: SLOT_HEIGHT,
+        zIndex: isOver ? 4 : 1,
       }}
-    />
+    >
+      {/* Drop line — only shown when actively hovering this slot */}
+      {isOver && (
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, pointerEvents: 'none' }}>
+          {/* Horizontal line */}
+          <div style={{ height: 2, background: 'linear-gradient(90deg, rgba(0,212,177,0.9), rgba(167,139,250,0.8))', boxShadow: '0 0 10px rgba(0,212,177,0.6)', borderRadius: 2 }} />
+          {/* Time badge */}
+          <div style={{
+            position: 'absolute', top: 3, left: 60,
+            background: 'linear-gradient(135deg,#00d4b1,#00bfa0)',
+            color: '#000', fontSize: 10, fontWeight: 900,
+            fontFamily: 'JetBrains Mono', padding: '2px 8px',
+            borderRadius: 99, boxShadow: '0 0 10px rgba(0,212,177,0.5)',
+            whiteSpace: 'nowrap',
+          }}>
+            {fmtTime ? fmtTime(minutes) : `${String(Math.floor(minutes/60)).padStart(2,'0')}:${String(minutes%60).padStart(2,'0')}`}
+          </div>
+          {/* Subtle bg highlight */}
+          <div style={{ position: 'absolute', top: 2, left: 0, right: 0, height: SLOT_HEIGHT - 2, background: 'rgba(0,212,177,0.07)', borderRadius: '0 0 4px 4px' }} />
+        </div>
+      )}
+      {/* Faint grid lines while any drag is active */}
+      {isDraggingAny && !isOver && minutes % 60 === 0 && (
+        <div style={{ position: 'absolute', top: 0, left: 48, right: 0, height: 1, background: 'rgba(255,255,255,0.06)', pointerEvents: 'none' }} />
+      )}
+    </div>
   );
 }
 
@@ -69,23 +82,21 @@ function PanelStrip({ label, isOpen, onToggle, summary, accentColor, children })
       {/* Toggle bar — always visible */}
       <motion.button
         onClick={onToggle}
-        whileHover={{ background: `rgba(${rgb},0.07)` }}
+        whileHover={{ background: `rgba(${rgb},0.06)` }}
         className="w-full flex items-center justify-between cursor-pointer transition-all"
-        style={{ padding: '7px 16px', background: isOpen ? 'rgba(0,0,0,0.15)' : `rgba(${rgb},0.05)` }}
+        style={{ padding: '5px 14px', background: isOpen ? 'rgba(0,0,0,0.12)' : `rgba(${rgb},0.04)` }}
       >
-        <div className="flex items-center" style={{ gap: 8 }}>
-          <span style={{ fontSize: 13 }}>{label}</span>
+        <div className="flex items-center" style={{ gap: 6 }}>
+          <span style={{ fontSize: 11 }}>{label}</span>
           {!isOpen && (
-            <span style={{ fontSize: 11, color: accentColor, fontFamily: 'Space Grotesk', fontWeight: 600 }}>
+            <span style={{ fontSize: 10, color: accentColor, fontFamily: 'Space Grotesk', fontWeight: 600 }}>
               {summary}
             </span>
           )}
         </div>
-        <div className="flex items-center" style={{ gap: 6 }}>
-          <span style={{ fontSize: 10, color: accentColor, fontFamily: 'Space Grotesk', fontWeight: 700, letterSpacing: '0.04em' }}>
-            {isOpen ? 'HIDE ▲' : 'SHOW ▼'}
-          </span>
-        </div>
+        <span style={{ fontSize: 9, color: accentColor, fontFamily: 'Space Grotesk', fontWeight: 700, letterSpacing: '0.04em' }}>
+          {isOpen ? 'HIDE ▲' : 'SHOW ▼'}
+        </span>
       </motion.button>
 
       {/* Collapsible content */}
@@ -113,7 +124,7 @@ function hexToRgbStr(hex) {
   return r ? `${parseInt(r[1], 16)},${parseInt(r[2], 16)},${parseInt(r[3], 16)}` : '255,255,255';
 }
 
-export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, selectedEventId, dayLabel = 'My Day', dayColor = '#00d4b1', selectedOutfits = [], onOutfitsChange, selectedMood, onMoodChange, defaultPanelsOpen = true }) {
+export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, selectedEventId, dayLabel = 'My Day', dayColor = '#00d4b1', selectedOutfits = [], onOutfitsChange, selectedMood, onMoodChange, defaultPanelsOpen = true, compact = false, noOwnContext = false, slotIdPrefix = '', isDraggingExternal = false }) {
   const [activeCard, setActiveCard] = useState(null);
   const [scrolled, setScrolled] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
@@ -156,30 +167,49 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
     setScrolled(e.currentTarget.scrollTop > 40);
   }, []);
 
+  const [overSlotMinutes, setOverSlotMinutes] = useState(null);
+
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 3 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 8 } })
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 10 } })
   );
 
   const handleDragStart = useCallback((event) => {
-    if (event.active.data.current?.card) setActiveCard(event.active.data.current.card);
-    if (event.active.data.current?.type === 'event') setActiveCard({ _isEvent: true, eventId: event.active.data.current.eventId });
+    const data = event.active.data.current;
+    if (data?.card) setActiveCard(data.card);
+    else if (data?.type === 'event') setActiveCard({ _isEvent: true, eventId: data.eventId });
   }, []);
+
+  // Parse slot minutes from an id like "slot-300" or "p0-slot-300"
+  const parseSlotMinutes = useCallback((id) => {
+    if (!id) return null;
+    const str = id.toString();
+    const match = str.match(/slot-(\d+)$/);
+    if (!match) return null;
+    const mins = parseInt(match[1], 10);
+    return isNaN(mins) ? null : mins;
+  }, []);
+
+  const handleDragOver = useCallback((event) => {
+    const mins = parseSlotMinutes(event.over?.id);
+    setOverSlotMinutes(mins);
+  }, [parseSlotMinutes]);
 
   const handleDragEnd = useCallback((event) => {
     const { active, over } = event;
     setActiveCard(null);
-    if (!over?.id?.toString().startsWith('slot-')) return;
-    const startMinutes = parseInt(over.id.toString().replace('slot-', ''), 10);
+    setOverSlotMinutes(null);
 
-    if (active.data.current?.type === 'event') {
-      timeline.moveEvent(active.data.current.eventId, startMinutes);
-    } else {
-      const card = active.data.current?.card;
-      if (!card) return;
-      timeline.addEvent(startMinutes, card, 60);
+    const startMinutes = parseSlotMinutes(over?.id);
+    if (startMinutes === null) return;
+
+    const data = active.data.current;
+    if (data?.type === 'event') {
+      timeline.moveEvent(data.eventId, startMinutes);
+    } else if (data?.card) {
+      timeline.addEvent(startMinutes, data.card, 60);
     }
-  }, [timeline]);
+  }, [timeline, parseSlotMinutes]);
 
   const filledCount = timeline.events.length;
 
@@ -187,13 +217,12 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
     ? 'fixed inset-0 z-50 flex overflow-hidden'
     : 'h-full flex overflow-hidden';
 
-  return (
+  const inner = (
     <>
-    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <div className={outerClass} style={{ background: '#09090f' }}>
 
-        {/* Card Library — hidden in fullscreen, collapsible */}
-        {!fullscreen && (
+        {/* Card Library — hidden in fullscreen, in noOwnContext mode, or collapsible */}
+        {!fullscreen && !noOwnContext && (
           <motion.div
             animate={{ width: libraryOpen ? 256 : 40 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
@@ -287,7 +316,7 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
           {/* Header bar */}
           <div
             className="flex items-center justify-between shrink-0"
-            style={{ padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.15)' }}
+            style={{ padding: compact ? '10px 14px' : '14px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.15)', flexWrap: compact ? 'wrap' : 'nowrap', gap: compact ? 8 : 0 }}
           >
             <div className="flex items-center" style={{ gap: 12 }}>
               <div className="relative">
@@ -295,9 +324,8 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
                 <div className="absolute inset-0 rounded-full animate-ping" style={{ background: dayColor, opacity: 0.3 }} />
               </div>
               <div>
-                <h3 className="font-bold text-white" style={{ fontFamily: 'Space Grotesk', fontSize: 15, lineHeight: 1.3 }}>{dayLabel}</h3>
-                {/* Day Duration control — highlighted box */}
-                <div style={{
+                <h3 className="font-bold text-white" style={{ fontFamily: 'Space Grotesk', fontSize: compact ? 13 : 15, lineHeight: 1.3 }}>{dayLabel}</h3>
+                {!compact && <div style={{
                   display: 'inline-flex', alignItems: 'center', gap: 8,
                   marginTop: 6, padding: '6px 10px', borderRadius: 10,
                   background: 'rgba(255,255,255,0.05)',
@@ -348,67 +376,91 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
                       </span>
                     </>
                   )}
-                </div>
+                </div>}
+                {compact && (
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                    {(() => {
+                      const decStart = useHoldButton(() => setStartHour(h => Math.max(0, h - 1)));
+                      const incStart = useHoldButton(() => setStartHour(h => { const n = Math.min(endHour - 1, h + 1); if (n >= endHour) setEndHour(e => Math.min(24, e + 1)); return n; }));
+                      const decEnd = useHoldButton(() => setEndHour(h => Math.max(startHour + 1, h - 1)));
+                      const incEnd = useHoldButton(() => setEndHour(h => Math.min(24, h + 1)));
+                      const btnStyle = (col) => ({ fontSize: 11, color: col, cursor: 'pointer', background: `rgba(${col === '#00d4b1' ? '0,212,177' : '245,158,11'},0.15)`, border: `1px solid ${col}44`, borderRadius: 5, width: 17, height: 17, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, userSelect: 'none' });
+                      return (<>
+                        <button {...decStart} style={btnStyle('#00d4b1')}>−</button>
+                        <span style={{ fontSize: 10, color: '#00d4b1', fontFamily: 'JetBrains Mono', fontWeight: 700, minWidth: 30, textAlign: 'center' }}>{fmtHour(startHour)}</span>
+                        <button {...incStart} style={btnStyle('#00d4b1')}>+</button>
+                        <span style={{ fontSize: 11, color: '#475569' }}>→</span>
+                        <button {...decEnd} style={btnStyle('#f59e0b')}>−</button>
+                        <span style={{ fontSize: 10, color: '#f59e0b', fontFamily: 'JetBrains Mono', fontWeight: 700, minWidth: 30, textAlign: 'center' }}>{fmtHour(endHour)}</span>
+                        <button {...incEnd} style={btnStyle('#f59e0b')}>+</button>
+                      </>);
+                    })()}
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="flex items-center" style={{ gap: 8 }}>
-              {/* AM/PM ↔ 24h toggle */}
-              <motion.button
-                onClick={() => setUse24(u => !u)}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                title="Switch time format"
-                className="flex items-center cursor-pointer font-bold transition-all"
-                style={{
-                  gap: 0, padding: '5px 0', borderRadius: 10, overflow: 'hidden',
-                  border: '1px solid rgba(167,139,250,0.3)',
-                  fontSize: 11, fontFamily: 'JetBrains Mono',
-                }}
-              >
-                <span style={{ padding: '4px 9px', background: !use24 ? 'rgba(167,139,250,0.25)' : 'rgba(255,255,255,0.04)', color: !use24 ? '#a78bfa' : '#475569', fontWeight: !use24 ? 800 : 500 }}>AM/PM</span>
-                <span style={{ padding: '4px 9px', background: use24 ? 'rgba(167,139,250,0.25)' : 'rgba(255,255,255,0.04)', color: use24 ? '#a78bfa' : '#475569', fontWeight: use24 ? 800 : 500 }}>24h</span>
-              </motion.button>
+            <div className="flex items-center" style={{ gap: 8, flexWrap: 'wrap' }}>
+              {/* AM/PM ↔ 24h toggle — hidden in compact mode */}
+              {!compact && (
+                <motion.button
+                  onClick={() => setUse24(u => !u)}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  title="Switch time format"
+                  className="flex items-center cursor-pointer font-bold transition-all"
+                  style={{
+                    gap: 0, padding: '5px 0', borderRadius: 10, overflow: 'hidden',
+                    border: '1px solid rgba(167,139,250,0.3)',
+                    fontSize: 11, fontFamily: 'JetBrains Mono',
+                  }}
+                >
+                  <span style={{ padding: '4px 9px', background: !use24 ? 'rgba(167,139,250,0.25)' : 'rgba(255,255,255,0.04)', color: !use24 ? '#a78bfa' : '#475569', fontWeight: !use24 ? 800 : 500 }}>AM/PM</span>
+                  <span style={{ padding: '4px 9px', background: use24 ? 'rgba(167,139,250,0.25)' : 'rgba(255,255,255,0.04)', color: use24 ? '#a78bfa' : '#475569', fontWeight: use24 ? 800 : 500 }}>24h</span>
+                </motion.button>
+              )}
 
-              {/* Fullscreen toggle */}
-              <motion.button
-                onClick={() => setFullscreen(f => !f)}
-                whileHover={{ scale: 1.05, background: 'rgba(255,255,255,0.08)' }}
-                whileTap={{ scale: 0.95 }}
-                title={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-                className="flex items-center justify-center text-slate-400 transition-all cursor-pointer"
-                style={{ width: 34, height: 34, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10 }}
-              >
-                {fullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-              </motion.button>
+              {/* Fullscreen toggle — hidden in compact mode */}
+              {!compact && (
+                <motion.button
+                  onClick={() => setFullscreen(f => !f)}
+                  whileHover={{ scale: 1.05, background: 'rgba(255,255,255,0.08)' }}
+                  whileTap={{ scale: 0.95 }}
+                  title={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+                  className="flex items-center justify-center text-slate-400 transition-all cursor-pointer"
+                  style={{ width: 34, height: 34, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10 }}
+                >
+                  {fullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                </motion.button>
+              )}
 
               <motion.button
                 onClick={() => timeline.reset()}
                 whileHover={{ scale: 1.04, background: 'rgba(255,255,255,0.08)' }}
                 whileTap={{ scale: 0.95 }}
                 className="flex items-center text-slate-400 transition-all cursor-pointer"
-                style={{ gap: 6, padding: '8px 14px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, fontSize: 12 }}
+                style={{ gap: 6, padding: compact ? '6px 10px' : '8px 14px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, fontSize: 12 }}
               >
-                <RotateCcw size={12} /> Reset
+                <RotateCcw size={12} /> {!compact && 'Reset'}
               </motion.button>
 
               <motion.button
                 onClick={() => onSimulateAll?.()}
                 disabled={filledCount === 0}
-                whileHover={filledCount > 0 ? { scale: 1.04, boxShadow: '0 0 28px rgba(0,212,177,0.55), 0 0 60px rgba(0,212,177,0.2)' } : {}}
+                whileHover={filledCount > 0 ? { scale: 1.04, boxShadow: `0 0 24px ${dayColor}88` } : {}}
                 whileTap={{ scale: 0.96 }}
                 className="relative overflow-hidden flex items-center font-bold text-black disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
                 style={{
-                  gap: 8, padding: '9px 20px',
+                  gap: 7, padding: compact ? '8px 14px' : '9px 20px',
                   background: filledCount > 0
-                    ? 'linear-gradient(135deg, #00d4b1 0%, #00bfa0 40%, #34d399 100%)'
-                    : 'rgba(0,212,177,0.3)',
-                  boxShadow: filledCount > 0 ? '0 0 16px rgba(0,212,177,0.5), inset 0 1px 0 rgba(255,255,255,0.25)' : 'none',
-                  borderRadius: 14, fontSize: 13,
+                    ? `linear-gradient(135deg, ${dayColor} 0%, ${dayColor}cc 100%)`
+                    : `${dayColor}44`,
+                  boxShadow: filledCount > 0 ? `0 0 14px ${dayColor}66, inset 0 1px 0 rgba(255,255,255,0.25)` : 'none',
+                  borderRadius: 14, fontSize: compact ? 12 : 13,
                   border: '1px solid rgba(255,255,255,0.2)',
+                  whiteSpace: 'nowrap',
                 }}
               >
-                {/* Shimmer */}
                 {filledCount > 0 && (
                   <motion.div
                     className="absolute inset-0 pointer-events-none"
@@ -417,22 +469,17 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
                     transition={{ duration: 2.2, repeat: Infinity, ease: 'linear', repeatDelay: 1.5 }}
                   />
                 )}
-                <motion.span
-                  animate={filledCount > 0 ? { rotate: [0, 0, 360] } : {}}
-                  transition={{ duration: 3, repeat: Infinity, repeatDelay: 4, ease: 'easeInOut' }}
-                >
-                  <Play size={13} fill="currentColor" />
-                </motion.span>
-                <span style={{ position: 'relative', zIndex: 1, letterSpacing: '0.02em' }}>Simulate Day</span>
+                <Play size={12} fill="currentColor" style={{ position: 'relative', zIndex: 1 }} />
+                <span style={{ position: 'relative', zIndex: 1 }}>Simulate</span>
                 {filledCount > 0 && (
-                  <span style={{ position: 'relative', zIndex: 1, background: 'rgba(0,0,0,0.2)', borderRadius: 6, padding: '1px 6px', fontSize: 10, fontWeight: 900 }}>{filledCount}</span>
+                  <span style={{ position: 'relative', zIndex: 1, background: 'rgba(0,0,0,0.2)', borderRadius: 5, padding: '1px 5px', fontSize: 10, fontWeight: 900 }}>{filledCount}</span>
                 )}
               </motion.button>
             </div>
           </div>
 
-          {/* ── Hide All / Show All control bar ── */}
-          {(() => {
+          {/* ── Hide All / Show All control bar — hidden in compact mode ── */}
+          {!compact && (() => {
             const allOpen = moodOpen && outfitOpen;
             const allClosed = !moodOpen && !outfitOpen;
             return (
@@ -477,7 +524,8 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
             );
           })()}
 
-          {/* ── Starting Mood strip ── */}
+          {!compact && (
+            <>
           <PanelStrip
             label="🎭 Starting Mood"
             isOpen={moodOpen && !scrolled}
@@ -487,8 +535,6 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
           >
             <MoodStarterSelector selected={selectedMood} onChange={onMoodChange} />
           </PanelStrip>
-
-          {/* ── Today's Look strip ── */}
           <PanelStrip
             label="👗 Today's Look"
             isOpen={outfitOpen && !scrolled}
@@ -498,6 +544,8 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
           >
             <AppearanceSelector selected={selectedOutfits} onChange={onOutfitsChange} />
           </PanelStrip>
+            </>
+          )}
 
           {/* Calendar grid */}
           <div ref={scrollRef} className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'thin' }} onScroll={handleScroll}>
@@ -554,7 +602,7 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
 
                 {/* Drop zones — one per 15 min */}
                 {dropSlots.map(m => (
-                  <SlotDropZone key={m} minutes={m} isDraggingAny={!!activeCard} startHour={startHour} />
+                  <SlotDropZone key={m} minutes={m} isDraggingAny={!!activeCard || isDraggingExternal} startHour={startHour} idPrefix={slotIdPrefix} fmtTime={fmtTime} />
                 ))}
 
                 {/* Empty-state drop hint */}
@@ -613,36 +661,66 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
         </div>
       </div>
 
-      <DragOverlay dropAnimation={{ duration: 200, easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)' }}>
-        {activeCard && !activeCard._isEvent && (
-          <div className="pointer-events-none" style={{ transform: 'rotate(2deg) scale(1.08)', width: 220, filter: 'drop-shadow(0 12px 32px rgba(0,0,0,0.5))' }}>
+    </>
+  );
+
+  const dragOverlay = (
+    <DragOverlay dropAnimation={{ duration: 150, easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)' }}>
+      {activeCard && !activeCard._isEvent && (
+        <div className="pointer-events-none" style={{ width: 210, filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.6))' }}>
+          <div style={{ transform: 'rotate(1.5deg) scale(1.05)' }}>
             <DecisionCard card={activeCard} compact />
-            <div style={{ textAlign: 'center', marginTop: 6, fontSize: 11, fontWeight: 700, color: '#00d4b1', fontFamily: 'Space Grotesk', letterSpacing: '0.05em' }}>
-              ↓ Drop on a time slot
-            </div>
           </div>
-        )}
-        {activeCard?._isEvent && (() => {
-          const evt = timeline.events.find(e => e.id === activeCard.eventId);
-          if (!evt) return null;
-          const meta = CATEGORY_META[evt.card.category];
-          return (
-            <div className="pointer-events-none" style={{ transform: 'rotate(1.5deg) scale(1.05)', width: 240, filter: 'drop-shadow(0 12px 32px rgba(0,0,0,0.6))' }}>
-              <div style={{ borderRadius: 12, overflow: 'hidden', background: `rgba(255,255,255,0.1)`, border: `2px solid ${meta.color}`, padding: '10px 14px', backdropFilter: 'blur(8px)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 16 }}>{evt.card.icon}</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#f1f5f9', fontFamily: 'Space Grotesk' }}>{evt.card.label}</span>
+          {overSlotMinutes != null ? (
+            <div style={{ textAlign: 'center', marginTop: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <div style={{ background: 'linear-gradient(135deg,#00d4b1,#00bfa0)', color: '#000', fontSize: 11, fontWeight: 900, fontFamily: 'JetBrains Mono', padding: '3px 10px', borderRadius: 99, boxShadow: '0 0 10px rgba(0,212,177,0.5)' }}>
+                → {fmtTime(overSlotMinutes)}
+              </div>
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center', marginTop: 5, fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: 'Space Grotesk' }}>Drag to a time slot</div>
+          )}
+        </div>
+      )}
+      {activeCard?._isEvent && (() => {
+        const evt = timeline.events.find(e => e.id === activeCard.eventId);
+        if (!evt) return null;
+        const meta = CATEGORY_META[evt.card.category];
+        const color = evt.customColor || meta.color;
+        const endMins = overSlotMinutes != null ? overSlotMinutes + evt.durationMinutes : null;
+        return (
+          <div className="pointer-events-none" style={{ width: 220, filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.7))' }}>
+            <div style={{ transform: 'rotate(1deg) scale(1.03)', borderRadius: 12, overflow: 'hidden', background: 'rgba(15,15,22,0.95)', border: `2px solid ${color}`, backdropFilter: 'blur(12px)' }}>
+              <div style={{ height: 3, background: color }} />
+              <div style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 18 }}>{evt.card.icon}</span>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#f1f5f9', fontFamily: 'Space Grotesk', lineHeight: 1.2 }}>{evt.card.label}</div>
+                  {overSlotMinutes != null && (
+                    <div style={{ fontSize: 11, color, fontFamily: 'JetBrains Mono', fontWeight: 700, marginTop: 2 }}>
+                      {fmtTime(overSlotMinutes)} – {fmtTime(endMins % (24*60))}
+                    </div>
+                  )}
                 </div>
               </div>
-              <div style={{ textAlign: 'center', marginTop: 6, fontSize: 11, fontWeight: 700, color: meta.color, fontFamily: 'Space Grotesk', letterSpacing: '0.05em' }}>
-                ↓ Drop to move event
-              </div>
             </div>
-          );
-        })()}
-      </DragOverlay>
+            <div style={{ textAlign: 'center', marginTop: 5, fontSize: 10, color: overSlotMinutes != null ? color : 'rgba(255,255,255,0.3)', fontFamily: 'Space Grotesk', fontWeight: overSlotMinutes != null ? 700 : 400 }}>
+              {overSlotMinutes != null ? `Drop to move here` : 'Drag to new time'}
+            </div>
+          </div>
+        );
+      })()}
+    </DragOverlay>
+  );
 
-    </DndContext>
+  return (
+    <>
+    {noOwnContext ? inner : (
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
+        {inner}
+        {dragOverlay}
+      </DndContext>
+    )}
 
     {/* Event detail modal */}
     <AnimatePresence>
