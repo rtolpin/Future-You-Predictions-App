@@ -238,15 +238,14 @@ export default function App() {
           {/* Logo */}
           <motion.button
             onClick={() => {
-              if (window.confirm('Reset your profile and return to setup? Your Identity Panel data will be cleared.')) {
-                localStorage.removeItem('future-you-profile');
-                setProfile(null);
-              }
+              if (account) return; // signed-in users: never wipe identity
+              localStorage.removeItem('future-you-profile');
+              setProfile(null);
             }}
             className="flex items-center cursor-pointer shrink-0"
             style={{ gap: isMobile ? 8 : 12 }}
             whileHover={{ opacity: 0.8 }} whileTap={{ scale: 0.96 }}
-            title="Return to setup (resets profile)"
+            title={account ? 'Future You' : 'Return to setup'}
           >
             <motion.div
               className="rounded-xl flex items-center justify-center text-xl shrink-0"
