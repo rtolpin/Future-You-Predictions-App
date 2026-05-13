@@ -267,7 +267,7 @@ MIT © Rebecca Tolpin
 
 **Built with ❤️ and Claude AI**
 
-### 🌐 [future-you-predictions-app.up.railway.app](https://future-you-predictions-app.up.railway.app)
+### 🌐 [https://future-you-predictions-app-production.up.railway.app/](https://future-you-predictions-app-production.up.railway.app/)
 
 [📦 GitHub Repo](https://github.com/rtolpin/Future-You-Predictions-App) &nbsp;·&nbsp; [🐛 Report Issue](https://github.com/rtolpin/Future-You-Predictions-App/issues) &nbsp;·&nbsp; [⭐ Star on GitHub](https://github.com/rtolpin/Future-You-Predictions-App)
 
