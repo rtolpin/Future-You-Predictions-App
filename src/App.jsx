@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { GitBranch, Layers, LayoutDashboard, Sparkles, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Settings2, Minimize2, X, Save, CalendarDays, LogOut, UserCircle } from 'lucide-react';
+import { GitBranch, Layers, LayoutDashboard, Sparkles, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Settings2, Minimize2, X, Save, CalendarDays, LogOut, UserCircle, Menu, Zap } from 'lucide-react';
+import { useIsMobile } from './hooks/useIsMobile.js';
 
 import { OnboardingForm } from './components/onboarding/OnboardingForm.jsx';
 import { DayCanvas } from './components/canvas/DayCanvas.jsx';
@@ -33,10 +34,12 @@ const VIEW_CONFIG = [
 ];
 
 export default function App() {
+  const isMobile = useIsMobile();
   const [profile, setProfile] = useState(() => {
     try { return JSON.parse(localStorage.getItem('future-you-profile')) || null; } catch { return null; }
   });
   const [view, setView] = useState(VIEWS.SINGLE);
+  const [showMobilePrediction, setShowMobilePrediction] = useState(false);
   const [showIdentity, setShowIdentity] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
   const [treeOpen, setTreeOpen] = useState(false);
@@ -230,78 +233,61 @@ export default function App() {
 
       {/* ── Header ── */}
       <header className="relative z-20 shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-        <div className="flex items-center justify-between px-6 py-4" style={{ background: 'rgba(9,9,15,0.85)', backdropFilter: 'blur(20px)' }}>
+        <div className="flex items-center justify-between" style={{ padding: isMobile ? '10px 14px' : '14px 24px', background: 'rgba(9,9,15,0.85)', backdropFilter: 'blur(20px)', gap: isMobile ? 8 : 16 }}>
 
-          {/* Logo — click to go back to home */}
+          {/* Logo */}
           <motion.button
             onClick={() => { localStorage.removeItem('future-you-profile'); setProfile(null); }}
-            className="flex items-center gap-3 cursor-pointer"
-            whileHover={{ opacity: 0.8 }}
-            whileTap={{ scale: 0.96 }}
+            className="flex items-center cursor-pointer shrink-0"
+            style={{ gap: isMobile ? 8 : 12 }}
+            whileHover={{ opacity: 0.8 }} whileTap={{ scale: 0.96 }}
             title="Return to home"
           >
             <motion.div
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-xl shrink-0"
-              style={{ background: 'linear-gradient(135deg, rgba(0,212,177,0.2), rgba(167,139,250,0.2))', border: '1px solid rgba(0,212,177,0.25)' }}
+              className="rounded-xl flex items-center justify-center text-xl shrink-0"
+              style={{ width: isMobile ? 34 : 36, height: isMobile ? 34 : 36, background: 'linear-gradient(135deg, rgba(0,212,177,0.2), rgba(167,139,250,0.2))', border: '1px solid rgba(0,212,177,0.25)' }}
               animate={{ boxShadow: ['0 0 12px rgba(0,212,177,0.2)', '0 0 20px rgba(0,212,177,0.35)', '0 0 12px rgba(0,212,177,0.2)'] }}
               transition={{ duration: 3, repeat: Infinity }}
-            >
-              🔮
-            </motion.div>
+            >🔮</motion.div>
             <div className="text-left">
-              <h1 className="text-sm font-bold text-white leading-tight" style={{ fontFamily: 'Space Grotesk' }}>Future You</h1>
-              <p className="text-xs text-slate-600 leading-tight">AI Life Simulator</p>
+              <h1 style={{ fontFamily: 'Space Grotesk', fontWeight: 800, fontSize: isMobile ? 13 : 14, color: '#f1f5f9', lineHeight: 1.2 }}>Future You</h1>
+              {!isMobile && <p className="text-xs text-slate-600 leading-tight">AI Life Simulator</p>}
             </div>
           </motion.button>
 
-          {/* View tabs */}
-          <div
-            className="flex items-center gap-2 p-2 rounded-2xl"
-            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
-          >
-            {VIEW_CONFIG.map(({ id, icon, label }) => {
-              const active = view === id;
-              return (
-                <motion.button
-                  key={id}
-                  onClick={() => setView(id)}
-                  whileHover={!active ? { background: 'rgba(255,255,255,0.06)', color: '#cbd5e1' } : {}}
-                  whileTap={{ scale: 0.95 }}
-                  className="relative flex items-center rounded-xl font-semibold transition-all cursor-pointer"
-                  style={{
-                    gap: 8,
-                    padding: '10px 20px',
-                    fontSize: 13,
-                    color: active ? '#00d4b1' : '#475569',
-                    fontFamily: 'Space Grotesk',
-                  }}
-                >
-                  {active && (
-                    <motion.div
-                      layoutId="active-tab"
-                      className="absolute inset-0 rounded-xl"
-                      style={{
-                        background: 'linear-gradient(135deg, rgba(0,212,177,0.18), rgba(0,212,177,0.08))',
-                        border: '1px solid rgba(0,212,177,0.35)',
-                        boxShadow: '0 0 16px rgba(0,212,177,0.15)',
-                      }}
-                      transition={{ type: 'spring', stiffness: 380, damping: 28 }}
-                    />
-                  )}
-                  <span className="relative z-10 flex items-center" style={{ gap: 7 }}>
-                    <span style={{ fontSize: 14 }}>{icon}</span>
-                    {label}
-                  </span>
-                </motion.button>
-              );
-            })}
-          </div>
+          {/* View tabs — desktop only; mobile uses bottom nav */}
+          {!isMobile && (
+            <div className="flex items-center gap-2 p-2 rounded-2xl" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              {VIEW_CONFIG.map(({ id, icon, label }) => {
+                const active = view === id;
+                return (
+                  <motion.button key={id} onClick={() => setView(id)}
+                    whileHover={!active ? { background: 'rgba(255,255,255,0.06)', color: '#cbd5e1' } : {}}
+                    whileTap={{ scale: 0.95 }}
+                    className="relative flex items-center rounded-xl font-semibold transition-all cursor-pointer"
+                    style={{ gap: 8, padding: '10px 20px', fontSize: 13, color: active ? '#00d4b1' : '#475569', fontFamily: 'Space Grotesk' }}
+                  >
+                    {active && (
+                      <motion.div layoutId="active-tab" className="absolute inset-0 rounded-xl"
+                        style={{ background: 'linear-gradient(135deg, rgba(0,212,177,0.18), rgba(0,212,177,0.08))', border: '1px solid rgba(0,212,177,0.35)', boxShadow: '0 0 16px rgba(0,212,177,0.15)' }}
+                        transition={{ type: 'spring', stiffness: 380, damping: 28 }}
+                      />
+                    )}
+                    <span className="relative z-10 flex items-center" style={{ gap: 7 }}>
+                      <span style={{ fontSize: 14 }}>{icon}</span>
+                      {label}
+                    </span>
+                  </motion.button>
+                );
+              })}
+            </div>
+          )}
 
           {/* Right side */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center" style={{ gap: isMobile ? 8 : 12 }}>
 
-            {/* ── Action group: Daily Summary + Save Day ── */}
-            <div
+            {/* ── Action group: Daily Summary + Save Day — hidden on mobile ── */}
+            {!isMobile && <div
               className="flex items-stretch gap-2 p-1.5 rounded-2xl"
               style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
             >
@@ -345,10 +331,10 @@ export default function App() {
                 <Save size={14} />
                 {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? '✓ Saved!' : saveStatus === 'error' ? 'Error' : 'Save Day'}
               </motion.button>
-            </div>
+            </div>}
 
-            {/* Sign In / Sign Up prompt — shown when not logged in */}
-            {!account && (
+            {/* Sign In / Sign Up prompt — hidden on mobile (shown in bottom sheet) */}
+            {!account && !isMobile && (
               <motion.button
                 onClick={() => setShowAuth(true)}
                 whileHover={{ scale: 1.04, borderColor: 'rgba(52,211,153,0.6)', color: '#6ee7b7', boxShadow: '0 0 14px rgba(52,211,153,0.25)' }}
@@ -373,8 +359,8 @@ export default function App() {
               </motion.button>
             )}
 
-            {/* History */}
-            {account && (
+            {/* History — desktop only */}
+            {account && !isMobile && (
               <motion.button
                 onClick={() => setShowHistory(true)}
                 whileHover={{ scale: 1.03 }}
@@ -386,8 +372,8 @@ export default function App() {
               </motion.button>
             )}
 
-            {/* Account — name + logout when signed in */}
-            {account && (
+            {/* Account — desktop only */}
+            {account && !isMobile && (
               <div className="flex items-center gap-2">
                 <div style={{ fontSize: 11, color: '#64748b', fontFamily: 'Space Grotesk', maxWidth: 80, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {account.name || account.email}
@@ -399,6 +385,20 @@ export default function App() {
                   <LogOut size={13} />
                 </motion.button>
               </div>
+            )}
+
+            {/* Mobile: sign-in button or save button */}
+            {isMobile && !account && (
+              <motion.button onClick={() => setShowAuth(true)} whileTap={{ scale: 0.95 }}
+                style={{ fontSize: 11, fontWeight: 700, color: '#34d399', background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.3)', borderRadius: 10, padding: '7px 12px', fontFamily: 'Space Grotesk', cursor: 'pointer' }}>
+                Sign In
+              </motion.button>
+            )}
+            {isMobile && account && (
+              <motion.button onClick={handleSaveDay} disabled={timeline.events.length === 0} whileTap={{ scale: 0.95 }}
+                style={{ fontSize: 11, fontWeight: 700, color: '#34d399', background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.3)', borderRadius: 10, padding: '7px 12px', fontFamily: 'Space Grotesk', cursor: 'pointer', opacity: timeline.events.length === 0 ? 0.4 : 1 }}>
+                <Save size={13} />
+              </motion.button>
             )}
 
             {/* Profile */}
@@ -417,7 +417,7 @@ export default function App() {
       </header>
 
       {/* ── Main content — all views always mounted; CSS show/hide preserves state ── */}
-      <main className="flex-1 relative z-10 overflow-hidden">
+      <main className="flex-1 relative z-10 overflow-hidden" style={{ paddingBottom: isMobile ? 64 : 0 }}>
           <div
             className="h-full flex"
             style={{ display: view === VIEWS.SINGLE ? 'flex' : 'none' }}
@@ -437,8 +437,8 @@ export default function App() {
                   onMoodChange={setSelectedMood}
                 />
               </div>
-              {/* Right panel — normal (non-fullscreen) mode only */}
-              {!predictionFullscreen && (
+              {/* Right panel — desktop only; mobile gets a bottom sheet */}
+              {!predictionFullscreen && !isMobile && (
                 <motion.div
                   animate={{ width: predictionOpen ? predictionWidth : 40 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
@@ -640,6 +640,94 @@ export default function App() {
           />
         )}
       </AnimatePresence>
+
+      {/* ── Mobile bottom navigation ── */}
+      {isMobile && (
+        <nav style={{
+          position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 40,
+          background: 'rgba(9,9,15,0.97)', backdropFilter: 'blur(20px)',
+          borderTop: '1px solid rgba(255,255,255,0.08)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-around',
+          padding: '8px 0 calc(8px + env(safe-area-inset-bottom))',
+        }}>
+          {VIEW_CONFIG.map(({ id, icon, label }) => {
+            const active = view === id;
+            const shortLabel = id === VIEWS.SINGLE ? 'Canvas' : id === VIEWS.PARALLEL ? 'Parallel' : 'Tree';
+            return (
+              <motion.button
+                key={id}
+                onClick={() => setView(id)}
+                whileTap={{ scale: 0.9 }}
+                style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                  padding: '6px 16px', borderRadius: 12, cursor: 'pointer',
+                  background: active ? 'rgba(0,212,177,0.12)' : 'transparent',
+                  border: active ? '1px solid rgba(0,212,177,0.25)' : '1px solid transparent',
+                  color: active ? '#00d4b1' : '#475569',
+                  minWidth: 70,
+                }}
+              >
+                <span style={{ fontSize: 18 }}>{icon}</span>
+                <span style={{ fontSize: 10, fontWeight: 700, fontFamily: 'Space Grotesk', letterSpacing: '0.02em' }}>{shortLabel}</span>
+              </motion.button>
+            );
+          })}
+
+          {/* Mobile AI prediction button */}
+          {dayPrediction && (
+            <motion.button
+              onClick={() => setShowMobilePrediction(true)}
+              whileTap={{ scale: 0.9 }}
+              style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                padding: '6px 16px', borderRadius: 12, cursor: 'pointer',
+                background: 'rgba(167,139,250,0.12)',
+                border: '1px solid rgba(167,139,250,0.25)',
+                color: '#a78bfa', minWidth: 70,
+              }}
+            >
+              <Zap size={18} />
+              <span style={{ fontSize: 10, fontWeight: 700, fontFamily: 'Space Grotesk' }}>AI</span>
+            </motion.button>
+          )}
+        </nav>
+      )}
+
+      {/* ── Mobile prediction bottom sheet ── */}
+      <AnimatePresence>
+        {isMobile && showMobilePrediction && dayPrediction && (
+          <motion.div
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 50,
+              background: '#09090f', display: 'flex', flexDirection: 'column',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.08)', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <Sparkles size={16} color="#00d4b1" />
+                <p style={{ fontFamily: 'Space Grotesk', fontWeight: 800, fontSize: 15, color: '#f1f5f9', margin: 0 }}>AI Prediction</p>
+              </div>
+              <button onClick={() => setShowMobilePrediction(false)} style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '6px 12px', color: '#94a3b8', cursor: 'pointer', fontFamily: 'Space Grotesk', fontSize: 12, fontWeight: 600 }}>
+                Close
+              </button>
+            </div>
+            <div style={{ flex: 1, overflow: 'hidden' }}>
+              <PredictionPanel
+                dayPrediction={dayPrediction}
+                isLoading={simProgress.active}
+                onClose={() => setShowMobilePrediction(false)}
+                onToggleFullscreen={() => { setShowMobilePrediction(false); setPredictionFullscreen(true); }}
+                isFullscreen={false}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
     {/* ── Day Canvas prediction fullscreen ── */}
     <AnimatePresence>

@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { useIsMobile } from '../../hooks/useIsMobile.js';
 
 // Returns props for a button that fires rapidly when held down
 function useHoldButton(action, delay = 120) {
@@ -125,6 +126,8 @@ function hexToRgbStr(hex) {
 }
 
 export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, selectedEventId, dayLabel = 'My Day', dayColor = '#00d4b1', selectedOutfits = [], onOutfitsChange, selectedMood, onMoodChange, defaultPanelsOpen = true, compact = false, noOwnContext = false, slotIdPrefix = '', isDraggingExternal = false }) {
+  const isMobile = useIsMobile();
+  const [showMobileLibrary, setShowMobileLibrary] = useState(false);
   const [activeCard, setActiveCard] = useState(null);
   const [scrolled, setScrolled] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
@@ -221,8 +224,8 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
     <>
       <div className={outerClass} style={{ background: '#09090f' }}>
 
-        {/* Card Library — hidden in fullscreen, in noOwnContext mode, or collapsible */}
-        {!fullscreen && !noOwnContext && (
+        {/* Card Library — desktop: collapsible sidebar | mobile: bottom drawer */}
+        {!fullscreen && !noOwnContext && !isMobile && (
           <motion.div
             animate={{ width: libraryOpen ? 256 : 40 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
@@ -308,6 +311,56 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
               </div>
             )}
           </motion.div>
+        )}
+
+        {/* Mobile: floating "Add Card" button */}
+        {!fullscreen && !noOwnContext && isMobile && (
+          <>
+            <motion.button
+              onClick={() => setShowMobileLibrary(true)}
+              whileTap={{ scale: 0.9 }}
+              style={{
+                position: 'absolute', bottom: 80, right: 20, zIndex: 30,
+                width: 52, height: 52, borderRadius: '50%',
+                background: `linear-gradient(135deg, ${dayColor}, ${dayColor}cc)`,
+                border: '2px solid rgba(255,255,255,0.2)',
+                boxShadow: `0 4px 20px ${dayColor}66`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', fontSize: 24,
+              }}
+            >+</motion.button>
+
+            {/* Mobile card library drawer */}
+            <AnimatePresence>
+              {showMobileLibrary && (
+                <motion.div
+                  initial={{ y: '100%' }}
+                  animate={{ y: 0 }}
+                  exit={{ y: '100%' }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                  style={{
+                    position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 999,
+                    height: '70vh', background: 'rgba(9,9,15,0.98)',
+                    borderTop: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: '20px 20px 0 0',
+                    display: 'flex', flexDirection: 'column',
+                    backdropFilter: 'blur(20px)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,0.08)', flexShrink: 0 }}>
+                    <p style={{ fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: 15, color: '#f1f5f9', margin: 0 }}>Add Activity</p>
+                    <button onClick={() => setShowMobileLibrary(false)} style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '6px 14px', color: '#94a3b8', cursor: 'pointer', fontFamily: 'Space Grotesk', fontWeight: 600, fontSize: 13 }}>Done</button>
+                  </div>
+                  <div style={{ flex: 1, overflowY: 'auto' }}>
+                    <CardLibrary />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            {showMobileLibrary && (
+              <div onClick={() => setShowMobileLibrary(false)} style={{ position: 'fixed', inset: 0, zIndex: 998, background: 'rgba(0,0,0,0.5)' }} />
+            )}
+          </>
         )}
 
         {/* Calendar timeline */}

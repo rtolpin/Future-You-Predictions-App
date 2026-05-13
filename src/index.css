@@ -32,6 +32,21 @@ body {
   font-family: 'DM Sans', sans-serif;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  /* Prevent tap highlight on mobile */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: pan-y;
+}
+
+/* Mobile-friendly touch scrolling */
+.overflow-y-auto, [style*="overflow-y: auto"], [style*="overflowY: 'auto'"] {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Bigger tap targets on mobile */
+@media (max-width: 767px) {
+  button { min-height: 36px; }
+  input, select { font-size: 16px !important; } /* prevent iOS zoom */
+  .react-flow__node { touch-action: none; }
 }
 
 h1, h2, h3, h4 {
