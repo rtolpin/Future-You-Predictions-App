@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, User, Check, MapPin, Sparkles, Zap } from 'lucide-react';
 
@@ -132,9 +133,28 @@ function TextField({ label, icon, value, onChange, placeholder }) {
 }
 
 export function IdentityPanel({ isOpen, onClose, profile, onUpdate }) {
-  const update = (key, value) => onUpdate({ ...profile, [key]: value });
-  const moodColor   = MOOD_COLORS[(profile?.mood   || 5) - 1];
-  const energyColor = MOOD_COLORS[(profile?.energy || 5) - 1];
+  // Local state + ref so rapid updates (sliders, fast typing) never use a stale
+  // snapshot of the profile prop — each update builds on the actual latest values.
+  const localRef = useRef(profile || {});
+  const [local, setLocal] = useState(() => profile || {});
+
+  // Re-sync from parent whenever the panel is opened
+  useEffect(() => {
+    if (isOpen) {
+      localRef.current = profile || {};
+      setLocal(profile || {});
+    }
+  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const update = useCallback((key, value) => {
+    const next = { ...localRef.current, [key]: value };
+    localRef.current = next;
+    setLocal(next);
+    onUpdate(next);
+  }, [onUpdate]);
+
+  const moodColor   = MOOD_COLORS[(local?.mood   || 5) - 1];
+  const energyColor = MOOD_COLORS[(local?.energy || 5) - 1];
 
   return (
     <AnimatePresence>
@@ -203,7 +223,7 @@ export function IdentityPanel({ isOpen, onClose, profile, onUpdate }) {
 
               <Section title="Your Name" icon="✍️">
                 <TextField
-                  value={profile?.name || ''}
+                  value={local?.name || ''}
                   onChange={v => update('name', v)}
                   placeholder="What should I call you?"
                 />
@@ -211,7 +231,7 @@ export function IdentityPanel({ isOpen, onClose, profile, onUpdate }) {
 
               <Section title="City / Neighborhood" icon="📍">
                 <TextField
-                  value={profile?.city || ''}
+                  value={local?.city || ''}
                   onChange={v => update('city', v)}
                   placeholder="e.g. Brooklyn, NYC"
                 />
@@ -220,7 +240,7 @@ export function IdentityPanel({ isOpen, onClose, profile, onUpdate }) {
               <Section title="Gender Identity" icon="🧬">
                 <ChipGroup
                   options={GENDER_OPTIONS}
-                  value={profile?.genderIdentity}
+                  value={local?.genderIdentity}
                   onChange={v => update('genderIdentity', v)}
                 />
               </Section>
@@ -228,7 +248,7 @@ export function IdentityPanel({ isOpen, onClose, profile, onUpdate }) {
               <Section title="Age Range" icon="🎂">
                 <ChipGroup
                   options={AGE_OPTIONS}
-                  value={profile?.ageRange}
+                  value={local?.ageRange}
                   onChange={v => update('ageRange', v)}
                 />
               </Section>
@@ -236,7 +256,7 @@ export function IdentityPanel({ isOpen, onClose, profile, onUpdate }) {
               <Section title="Employment" icon="💼">
                 <ChipGroup
                   options={EMPLOYMENT_OPTIONS}
-                  value={profile?.employment}
+                  value={local?.employment}
                   onChange={v => update('employment', v)}
                 />
               </Section>
@@ -245,8 +265,8 @@ export function IdentityPanel({ isOpen, onClose, profile, onUpdate }) {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 20, padding: '16px 18px', borderRadius: 16, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
                   <SliderField
                     label="Mood"
-                    emoji={MOOD_EMOJI[(profile?.mood || 5) - 1]}
-                    value={profile?.mood || 5}
+                    emoji={MOOD_EMOJI[(local?.mood || 5) - 1]}
+                    value={local?.mood || 5}
                     onChange={v => update('mood', v)}
                     color={moodColor}
                     low="😞 Low"
@@ -256,7 +276,7 @@ export function IdentityPanel({ isOpen, onClose, profile, onUpdate }) {
                   <SliderField
                     label="Energy"
                     emoji="⚡"
-                    value={profile?.energy || 5}
+                    value={local?.energy || 5}
                     onChange={v => update('energy', v)}
                     color={energyColor}
                     low="😴 Drained"
