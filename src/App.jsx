@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { GitBranch, Layers, LayoutDashboard, Sparkles, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Settings2, Minimize2, X, Save, CalendarDays, LogOut, UserCircle, Menu, Zap } from 'lucide-react';
+import { GitBranch, Layers, LayoutDashboard, Sparkles, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Settings2, Minimize2, X, Save, CalendarDays, LogOut, UserCircle, Menu, Zap, Target, ClipboardList, Check } from 'lucide-react';
 import { useIsMobile } from './hooks/useIsMobile.js';
 
 import { OnboardingForm } from './components/onboarding/OnboardingForm.jsx';
@@ -16,6 +16,8 @@ import { ProfileAvatar } from './components/profile/ProfileAvatar.jsx';
 import { DailySummary } from './components/summary/DailySummary.jsx';
 import { AuthModal } from './components/account/AuthModal.jsx';
 import { HistoryCalendar } from './components/account/HistoryCalendar.jsx';
+import { DayGoals } from './components/goals/DayGoals.jsx';
+import { DayRetrospective } from './components/goals/DayRetrospective.jsx';
 import { useTimeline, minutesToLabel } from './hooks/useTimeline.js';
 import { simulateDecision, simulateDayFlow } from './utils/claudeClient.js';
 import { authClient, daysClient } from './utils/accountClient.js';
@@ -28,10 +30,295 @@ const VIEWS = {
 };
 
 const VIEW_CONFIG = [
-  { id: VIEWS.SINGLE, icon: <LayoutDashboard size={13} />, label: 'Day Canvas' },
-  { id: VIEWS.PARALLEL, icon: <Layers size={13} />, label: 'Parallel Days Comparison' },
-  { id: VIEWS.TREE, icon: <GitBranch size={13} />, label: 'Day Decisions Tree Builder' },
+  {
+    id: VIEWS.SINGLE,
+    icon: <LayoutDashboard size={15} />,
+    label: 'Day Canvas',
+    shortLabel: 'Canvas',
+    description: 'Build your day',
+    color: '#00d4b1',
+    colorRgb: '0,212,177',
+  },
+  {
+    id: VIEWS.PARALLEL,
+    icon: <Layers size={15} />,
+    label: 'Parallel Days',
+    shortLabel: 'Parallel',
+    description: 'Compare 2 life paths',
+    color: '#a78bfa',
+    colorRgb: '167,139,250',
+  },
+  {
+    id: VIEWS.TREE,
+    icon: <GitBranch size={15} />,
+    label: 'Decision Tree',
+    shortLabel: 'Tree',
+    description: 'Map every choice',
+    color: '#f59e0b',
+    colorRgb: '245,158,11',
+  },
 ];
+
+function RightPanelGoals({ goals, checkedGoals, onToggle, onOpenGoalsModal }) {
+  const [buildOpen, setBuildOpen] = useState(true);
+  const [breakOpen, setBreakOpen] = useState(true);
+
+  const buildGoals = goals.filter(g => g.type === 'build');
+  const breakGoals = goals.filter(g => g.type === 'break');
+  const doneCount  = goals.filter(g => checkedGoals.has(g.id)).length;
+  const pct        = Math.round((doneCount / goals.length) * 100);
+  const allDone    = doneCount === goals.length;
+
+  if (goals.length === 0) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', padding: 24, textAlign: 'center' }}>
+        <div style={{ fontSize: 36, marginBottom: 12 }}>🎯</div>
+        <p style={{ color: '#475569', fontSize: 13, fontFamily: 'DM Sans', lineHeight: 1.6, marginBottom: 16 }}>
+          No goals set for today.
+        </p>
+        <motion.button onClick={onOpenGoalsModal}
+          whileHover={{ scale: 1.04, boxShadow: '0 0 18px rgba(0,212,177,0.3)' }} whileTap={{ scale: 0.97 }}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 10, border: '1.5px solid rgba(0,212,177,0.4)', background: 'rgba(0,212,177,0.1)', color: '#00d4b1', fontSize: 12, fontWeight: 700, fontFamily: 'Space Grotesk', cursor: 'pointer' }}>
+          <Target size={13} /> Set Goals
+        </motion.button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', minHeight: 0 }}>
+      {/* Progress header */}
+      <div style={{ padding: '14px 16px 10px', flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+          <span style={{ fontSize: 16 }}>{allDone ? '🏆' : '🎯'}</span>
+          <span style={{ flex: 1, fontSize: 12, fontWeight: 700, color: allDone ? '#34d399' : '#94a3b8', fontFamily: 'Space Grotesk' }}>
+            {allDone ? '✨ All done today!' : `${doneCount} of ${goals.length} complete`}
+          </span>
+          <motion.button onClick={onOpenGoalsModal} whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }}
+            title="Edit goals"
+            style={{ width: 24, height: 24, borderRadius: 6, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Target size={11} />
+          </motion.button>
+        </div>
+        <div style={{ height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.07)', overflow: 'hidden' }}>
+          <motion.div animate={{ width: `${pct}%` }} transition={{ duration: 0.5, ease: 'easeOut' }}
+            style={{ height: '100%', borderRadius: 2, background: allDone ? 'linear-gradient(90deg,#34d399,#00d4b1)' : '#00d4b1', boxShadow: '0 0 6px rgba(0,212,177,0.5)' }} />
+        </div>
+      </div>
+
+      {/* Goal sections */}
+      <div className="flex-1 overflow-y-auto" style={{ padding: '10px 10px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+
+        {buildGoals.length > 0 && (
+          <div style={{ borderRadius: 10, border: '1px solid rgba(52,211,153,0.2)', background: 'rgba(52,211,153,0.04)' }}>
+            <button onClick={() => setBuildOpen(o => !o)}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 7, padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer', borderBottom: buildOpen ? '1px solid rgba(52,211,153,0.15)' : 'none' }}>
+              <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#34d399', boxShadow: '0 0 5px #34d399', flexShrink: 0 }} />
+              <span style={{ flex: 1, fontSize: 10, fontWeight: 800, color: '#34d399', fontFamily: 'Space Grotesk', textTransform: 'uppercase', letterSpacing: '0.07em', textAlign: 'left' }}>✅ Good Habits</span>
+              <span style={{ fontSize: 10, color: '#34d399', opacity: 0.7, fontFamily: 'Space Grotesk' }}>{buildGoals.filter(g => checkedGoals.has(g.id)).length}/{buildGoals.length}</span>
+              <motion.span animate={{ rotate: buildOpen ? 0 : -90 }} transition={{ duration: 0.15 }} style={{ display: 'flex', color: '#34d399', opacity: 0.5 }}><ChevronDown size={11} /></motion.span>
+            </button>
+            <div style={{ maxHeight: buildOpen ? 2000 : 0, overflow: 'hidden', transition: 'max-height 0.25s ease' }}>
+              <div style={{ padding: '5px 8px 8px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {buildGoals.map(g => <GoalRow key={g.id} g={g} checked={checkedGoals.has(g.id)} onToggle={onToggle} />)}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {breakGoals.length > 0 && (
+          <div style={{ borderRadius: 10, border: '1px solid rgba(248,113,113,0.2)', background: 'rgba(248,113,113,0.04)' }}>
+            <button onClick={() => setBreakOpen(o => !o)}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 7, padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer', borderBottom: breakOpen ? '1px solid rgba(248,113,113,0.15)' : 'none' }}>
+              <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#f87171', boxShadow: '0 0 5px #f87171', flexShrink: 0 }} />
+              <span style={{ flex: 1, fontSize: 10, fontWeight: 800, color: '#f87171', fontFamily: 'Space Grotesk', textTransform: 'uppercase', letterSpacing: '0.07em', textAlign: 'left' }}>🚫 Bad Habits</span>
+              <span style={{ fontSize: 10, color: '#f87171', opacity: 0.7, fontFamily: 'Space Grotesk' }}>{breakGoals.filter(g => checkedGoals.has(g.id)).length}/{breakGoals.length}</span>
+              <motion.span animate={{ rotate: breakOpen ? 0 : -90 }} transition={{ duration: 0.15 }} style={{ display: 'flex', color: '#f87171', opacity: 0.5 }}><ChevronDown size={11} /></motion.span>
+            </button>
+            <div style={{ maxHeight: breakOpen ? 2000 : 0, overflow: 'hidden', transition: 'max-height 0.25s ease' }}>
+              <div style={{ padding: '5px 8px 8px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {breakGoals.map(g => <GoalRow key={g.id} g={g} checked={checkedGoals.has(g.id)} onToggle={onToggle} />)}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function GoalRow({ g, checked, onToggle }) {
+  const isBuild  = g.type === 'build';
+  const col      = isBuild ? '#34d399' : '#f87171';
+  const rgb      = isBuild ? '52,211,153' : '248,113,113';
+  const textCol  = isBuild ? '#6ee7b7' : '#fca5a5';
+  return (
+    <motion.button
+      onClick={() => onToggle(g.id)}
+      whileHover={{ x: 2 }}
+      whileTap={{ scale: 0.97 }}
+      style={{
+        width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+        padding: '8px 12px', borderRadius: 10, cursor: 'pointer', textAlign: 'left',
+        background: checked ? `rgba(${rgb},0.1)` : 'rgba(255,255,255,0.03)',
+        border: `1px solid ${checked ? `rgba(${rgb},0.35)` : 'rgba(255,255,255,0.06)'}`,
+        transition: 'all 0.15s',
+      }}
+    >
+      <span style={{ fontSize: 16, flexShrink: 0 }}>{g.emoji}</span>
+      <span style={{
+        flex: 1, fontSize: 12, fontWeight: 500, fontFamily: 'DM Sans',
+        color: checked ? textCol : '#cbd5e1',
+        textDecoration: checked ? 'line-through' : 'none',
+        textDecorationColor: `rgba(${rgb},0.5)`,
+      }}>{g.text}</span>
+      <motion.div
+        animate={{ scale: checked ? [1.25, 1] : 1 }}
+        style={{
+          width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+          border: `2px solid ${checked ? col : 'rgba(255,255,255,0.15)'}`,
+          background: checked ? `rgba(${rgb},0.22)` : 'transparent',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          transition: 'border 0.15s, background 0.15s',
+        }}
+      >
+        <AnimatePresence>
+          {checked && (
+            <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} transition={{ duration: 0.12 }}>
+              <Check size={11} color={col} strokeWidth={3} />
+            </motion.span>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    </motion.button>
+  );
+}
+
+function GoalsPanel({ goals, checkedGoals, onToggle, headerHeight }) {
+  const [open, setOpen]           = useState(true);
+  const [buildOpen, setBuildOpen] = useState(true);
+  const [breakOpen, setBreakOpen] = useState(true);
+
+  const buildGoals = goals.filter(g => g.type === 'build');
+  const breakGoals = goals.filter(g => g.type === 'break');
+  const doneCount  = goals.filter(g => checkedGoals.has(g.id)).length;
+  const pct        = Math.round((doneCount / goals.length) * 100);
+  const allDone    = doneCount === goals.length;
+
+  return (
+    <motion.div
+      initial={{ x: -260 }}
+      animate={{ x: 0 }}
+      exit={{ x: -260 }}
+      transition={{ type: 'spring', stiffness: 280, damping: 28 }}
+      style={{
+        position: 'fixed',
+        left: 0,
+        top: headerHeight ?? 62,
+        bottom: 0,
+        width: 248,
+        zIndex: 25,
+        display: 'flex',
+        flexDirection: 'column',
+        background: 'linear-gradient(180deg, rgba(13,13,24,0.97) 0%, rgba(9,9,15,0.97) 100%)',
+        borderRight: '1px solid rgba(255,255,255,0.09)',
+        backdropFilter: 'blur(16px)',
+        boxShadow: '4px 0 24px rgba(0,0,0,0.4)',
+      }}
+    >
+      {/* ── Panel header ── */}
+      <div style={{ padding: '14px 16px 10px', borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 10 }}>
+          <div style={{ width: 30, height: 30, borderRadius: 9, background: allDone ? 'rgba(52,211,153,0.18)' : 'rgba(0,212,177,0.12)', border: `1.5px solid ${allDone ? 'rgba(52,211,153,0.45)' : 'rgba(0,212,177,0.3)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>
+            {allDone ? '🏆' : '🎯'}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontSize: 13, fontWeight: 800, color: '#f1f5f9', fontFamily: 'Space Grotesk', lineHeight: 1.2 }}>Today's Goals</p>
+            <p style={{ fontSize: 11, color: allDone ? '#34d399' : '#64748b', fontFamily: 'DM Sans', marginTop: 1 }}>
+              {allDone ? '✨ All done!' : `${doneCount} of ${goals.length} complete`}
+            </p>
+          </div>
+          <span style={{ fontSize: 11, fontWeight: 700, fontFamily: 'Space Grotesk', color: allDone ? '#34d399' : '#94a3b8', background: allDone ? 'rgba(52,211,153,0.15)' : 'rgba(255,255,255,0.07)', border: `1px solid ${allDone ? 'rgba(52,211,153,0.35)' : 'rgba(255,255,255,0.1)'}`, borderRadius: 20, padding: '2px 8px', flexShrink: 0 }}>
+            {doneCount}/{goals.length}
+          </span>
+        </div>
+
+        {/* Progress bar */}
+        <div style={{ height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.07)', overflow: 'hidden' }}>
+          <motion.div
+            animate={{ width: `${pct}%` }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
+            style={{ height: '100%', borderRadius: 2, background: allDone ? 'linear-gradient(90deg,#34d399,#00d4b1)' : '#00d4b1', boxShadow: '0 0 6px rgba(0,212,177,0.5)' }}
+          />
+        </div>
+      </div>
+
+      {/* ── Scrollable goal sections ── */}
+      <div className="flex-1 overflow-y-auto" style={{ padding: '10px 12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+
+        {/* ✅ Good Habits to Build */}
+        {buildGoals.length > 0 && (
+          <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(52,211,153,0.2)', background: 'rgba(52,211,153,0.04)' }}>
+            <button
+              onClick={() => setBuildOpen(o => !o)}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', background: 'none', border: 'none', cursor: 'pointer', borderBottom: buildOpen ? '1px solid rgba(52,211,153,0.15)' : 'none' }}
+            >
+              <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#34d399', boxShadow: '0 0 6px #34d399', flexShrink: 0 }} />
+              <span style={{ flex: 1, fontSize: 11, fontWeight: 800, color: '#34d399', fontFamily: 'Space Grotesk', textTransform: 'uppercase', letterSpacing: '0.07em', textAlign: 'left' }}>
+                ✅ Good Habits
+              </span>
+              <span style={{ fontSize: 10, fontWeight: 700, color: '#34d399', opacity: 0.7, fontFamily: 'Space Grotesk' }}>
+                {buildGoals.filter(g => checkedGoals.has(g.id)).length}/{buildGoals.length}
+              </span>
+              <motion.span animate={{ rotate: buildOpen ? 0 : -90 }} transition={{ duration: 0.18 }} style={{ display: 'flex', color: '#34d399', opacity: 0.5 }}>
+                <ChevronDown size={12} />
+              </motion.span>
+            </button>
+            <AnimatePresence initial={false}>
+              {buildOpen && (
+                <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} transition={{ duration: 0.2 }} style={{ overflow: 'hidden' }}>
+                  <div style={{ padding: '6px 8px 8px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {buildGoals.map(g => <GoalRow key={g.id} g={g} checked={checkedGoals.has(g.id)} onToggle={onToggle} />)}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
+
+        {/* 🚫 Bad Habits to Break */}
+        {breakGoals.length > 0 && (
+          <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(248,113,113,0.2)', background: 'rgba(248,113,113,0.04)' }}>
+            <button
+              onClick={() => setBreakOpen(o => !o)}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', background: 'none', border: 'none', cursor: 'pointer', borderBottom: breakOpen ? '1px solid rgba(248,113,113,0.15)' : 'none' }}
+            >
+              <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#f87171', boxShadow: '0 0 6px #f87171', flexShrink: 0 }} />
+              <span style={{ flex: 1, fontSize: 11, fontWeight: 800, color: '#f87171', fontFamily: 'Space Grotesk', textTransform: 'uppercase', letterSpacing: '0.07em', textAlign: 'left' }}>
+                🚫 Bad Habits
+              </span>
+              <span style={{ fontSize: 10, fontWeight: 700, color: '#f87171', opacity: 0.7, fontFamily: 'Space Grotesk' }}>
+                {breakGoals.filter(g => checkedGoals.has(g.id)).length}/{breakGoals.length}
+              </span>
+              <motion.span animate={{ rotate: breakOpen ? 0 : -90 }} transition={{ duration: 0.18 }} style={{ display: 'flex', color: '#f87171', opacity: 0.5 }}>
+                <ChevronDown size={12} />
+              </motion.span>
+            </button>
+            <AnimatePresence initial={false}>
+              {breakOpen && (
+                <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} transition={{ duration: 0.2 }} style={{ overflow: 'hidden' }}>
+                  <div style={{ padding: '6px 8px 8px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {breakGoals.map(g => <GoalRow key={g.id} g={g} checked={checkedGoals.has(g.id)} onToggle={onToggle} />)}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
 
 export default function App() {
   const isMobile = useIsMobile();
@@ -58,6 +345,34 @@ export default function App() {
   });
   const [showAuth, setShowAuth] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [checkedGoals, setCheckedGoals] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem('future-you-checked-goals')) || []); }
+    catch { return new Set(); }
+  });
+
+  const toggleCheckedGoal = useCallback((id) => {
+    setCheckedGoals(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      localStorage.setItem('future-you-checked-goals', JSON.stringify([...next]));
+      return next;
+    });
+  }, []);
+
+  const [rightPanelTab, setRightPanelTab] = useState('predictions'); // 'predictions' | 'goals'
+
+  const [goals, setGoals] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('future-you-goals')) || []; } catch { return []; }
+  });
+  const [showGoals, setShowGoals] = useState(false);
+  const [showRetrospective, setShowRetrospective] = useState(false);
+  const [retroResult, setRetroResult]             = useState(null);
+  const [summaryResult, setSummaryResult]         = useState(null);
+
+  const handleGoalsChange = useCallback((updated) => {
+    localStorage.setItem('future-you-goals', JSON.stringify(updated));
+    setGoals(updated);
+  }, []);
   const [saveStatus, setSaveStatus] = useState(null); // 'saving'|'saved'|'error'
   const [simProgress, setSimProgress] = useState({ active: false, current: 0, total: 0, currentAction: '' });
 
@@ -261,25 +576,54 @@ export default function App() {
 
           {/* View tabs — desktop only; mobile uses bottom nav */}
           {!isMobile && (
-            <div className="flex items-center gap-2 p-2 rounded-2xl" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-              {VIEW_CONFIG.map(({ id, icon, label }) => {
+            <div className="flex items-center gap-1" style={{ padding: '3px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 18 }}>
+              {VIEW_CONFIG.map(({ id, icon, label, description, color, colorRgb }) => {
                 const active = view === id;
+                const isExplore = id !== VIEWS.SINGLE;
                 return (
-                  <motion.button key={id} onClick={() => setView(id)}
-                    whileHover={!active ? { background: 'rgba(255,255,255,0.06)', color: '#cbd5e1' } : {}}
-                    whileTap={{ scale: 0.95 }}
-                    className="relative flex items-center rounded-xl font-semibold transition-all cursor-pointer"
-                    style={{ gap: 8, padding: '10px 20px', fontSize: 13, color: active ? '#00d4b1' : '#475569', fontFamily: 'Space Grotesk' }}
+                  <motion.button
+                    key={id}
+                    onClick={() => setView(id)}
+                    whileHover={!active ? { color } : {}}
+                    whileTap={{ scale: 0.96 }}
+                    className="relative flex flex-col cursor-pointer"
+                    style={{
+                      alignItems: 'flex-start', gap: 2,
+                      padding: '10px 18px', borderRadius: 14, minWidth: 130,
+                      border: isExplore && !active ? `1px solid rgba(${colorRgb},0.18)` : '1px solid transparent',
+                      background: isExplore && !active ? `rgba(${colorRgb},0.05)` : 'transparent',
+                      color: active ? color : isExplore ? color : '#94a3b8',
+                      fontFamily: 'Space Grotesk',
+                    }}
                   >
+                    {/* Spring-animated active background */}
                     {active && (
-                      <motion.div layoutId="active-tab" className="absolute inset-0 rounded-xl"
-                        style={{ background: 'linear-gradient(135deg, rgba(0,212,177,0.18), rgba(0,212,177,0.08))', border: '1px solid rgba(0,212,177,0.35)', boxShadow: '0 0 16px rgba(0,212,177,0.15)' }}
-                        transition={{ type: 'spring', stiffness: 380, damping: 28 }}
+                      <motion.div
+                        layoutId="view-tab-indicator"
+                        className="absolute inset-0"
+                        style={{
+                          borderRadius: 13,
+                          background: `linear-gradient(135deg, rgba(${colorRgb},0.22), rgba(${colorRgb},0.09))`,
+                          border: `1.5px solid rgba(${colorRgb},0.45)`,
+                          boxShadow: `0 0 18px rgba(${colorRgb},0.22)`,
+                        }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 32, mass: 0.7 }}
                       />
                     )}
-                    <span className="relative z-10 flex items-center" style={{ gap: 7 }}>
-                      <span style={{ fontSize: 14 }}>{icon}</span>
+                    <span className="relative flex items-center" style={{ gap: 7, fontSize: 13, fontWeight: 800, zIndex: 1 }}>
+                      <span style={{ opacity: active ? 1 : 0.8 }}>{icon}</span>
                       {label}
+                      {isExplore && !active && (
+                        <span style={{
+                          fontSize: 9, fontWeight: 800, fontFamily: 'Space Grotesk',
+                          background: `rgba(${colorRgb},0.2)`, border: `1px solid rgba(${colorRgb},0.4)`,
+                          color, borderRadius: 20, padding: '2px 6px',
+                          letterSpacing: '0.06em', textTransform: 'uppercase',
+                        }}>✨ Explore</span>
+                      )}
+                    </span>
+                    <span className="relative" style={{ fontSize: 11, color: active ? `rgba(${colorRgb},0.7)` : '#475569', fontFamily: 'DM Sans', paddingLeft: 22, zIndex: 1 }}>
+                      {description}
                     </span>
                   </motion.button>
                 );
@@ -290,16 +634,54 @@ export default function App() {
           {/* Right side */}
           <div className="flex items-center" style={{ gap: isMobile ? 8 : 12 }}>
 
-            {/* ── Action group: Daily Summary + Save Day — hidden on mobile ── */}
+            {/* ── Action group: Goals + Retro + Summary + Save — hidden on mobile ── */}
             {!isMobile && <div
               className="flex items-stretch gap-2 p-1.5 rounded-2xl"
               style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
             >
+              {/* Day Goals */}
+              <motion.button
+                onClick={() => setShowGoals(true)}
+                whileHover={{ scale: 1.03, boxShadow: '0 0 14px rgba(0,212,177,0.3)' }}
+                whileTap={{ scale: 0.97 }}
+                className="flex items-center gap-2 rounded-xl font-bold transition-all cursor-pointer"
+                style={{
+                  padding: '9px 14px', fontSize: 13,
+                  background: goals.length > 0 ? 'linear-gradient(135deg, rgba(0,212,177,0.22), rgba(0,212,177,0.1))' : 'rgba(0,212,177,0.1)',
+                  color: '#00d4b1',
+                  border: `1px solid ${goals.length > 0 ? 'rgba(0,212,177,0.45)' : 'rgba(0,212,177,0.25)'}`,
+                  fontFamily: 'Space Grotesk',
+                }}
+              >
+                <Target size={14} />
+                Goals{goals.length > 0 ? ` (${goals.length})` : ''}
+              </motion.button>
+
+              {/* Retrospective */}
+              <motion.button
+                onClick={() => setShowRetrospective(true)}
+                whileHover={{ scale: 1.03, boxShadow: '0 0 14px rgba(167,139,250,0.3)' }}
+                whileTap={{ scale: 0.97 }}
+                className="flex items-center gap-2 rounded-xl font-bold transition-all cursor-pointer"
+                style={{
+                  padding: '9px 14px', fontSize: 13,
+                  background: 'rgba(167,139,250,0.1)',
+                  color: '#a78bfa',
+                  border: '1px solid rgba(167,139,250,0.25)',
+                  fontFamily: 'Space Grotesk',
+                }}
+              >
+                <ClipboardList size={14} /> Retrospective
+              </motion.button>
+
+              {/* Divider */}
+              <div style={{ width: 1, background: 'rgba(255,255,255,0.08)', alignSelf: 'stretch', borderRadius: 2 }} />
+
               {/* Daily Summary */}
               <motion.button
                 onClick={() => setShowSummary(true)}
                 disabled={!hasChoices}
-                whileHover={hasChoices ? { scale: 1.03, boxShadow: '0 0 18px rgba(245,158,11,0.4)' } : {}}
+                whileHover={hasChoices ? { scale: 1.03, boxShadow: '0 0 14px rgba(245,158,11,0.35)' } : {}}
                 whileTap={{ scale: 0.97 }}
                 className="flex items-center gap-2 rounded-xl font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                 style={{
@@ -321,7 +703,7 @@ export default function App() {
                 onClick={handleSaveDay}
                 disabled={!account || timeline.events.length === 0}
                 title={!account ? 'Sign in to save your day' : undefined}
-                whileHover={account && timeline.events.length > 0 ? { scale: 1.03, boxShadow: '0 0 18px rgba(52,211,153,0.4)' } : {}}
+                whileHover={account && timeline.events.length > 0 ? { scale: 1.03, boxShadow: '0 0 14px rgba(52,211,153,0.35)' } : {}}
                 whileTap={{ scale: 0.97 }}
                 className="flex items-center gap-2 rounded-xl font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                 style={{
@@ -420,11 +802,12 @@ export default function App() {
         </div>
       </header>
 
-      {/* ── Main content — all views always mounted; CSS show/hide preserves state ── */}
+      {/* ── Main content — all views always mounted; framer-motion transitions ── */}
       <main className="flex-1 relative z-10 overflow-hidden" style={{ paddingBottom: isMobile ? 64 : 0 }}>
-          <div
-            className="h-full flex"
-            style={{ display: view === VIEWS.SINGLE ? 'flex' : 'none' }}
+          <motion.div
+            animate={{ opacity: view === VIEWS.SINGLE ? 1 : 0 }}
+            transition={{ duration: 0.38, ease: [0.4, 0, 0.2, 1] }}
+            style={{ position: 'absolute', inset: 0, display: 'flex', pointerEvents: view === VIEWS.SINGLE ? 'auto' : 'none', zIndex: view === VIEWS.SINGLE ? 2 : 1 }}
           >
               {/* Day Canvas */}
               <div className="flex-1 overflow-hidden" style={{ borderRight: '1px solid rgba(255,255,255,0.06)' }}>
@@ -461,35 +844,100 @@ export default function App() {
                           onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
                         />
                       </div>
-                      {/* Collapse button */}
-                      <div style={{ position: 'absolute', top: 14, left: 10, zIndex: 20 }}>
-                        <button
+
+                      {/* ── Tab bar ── */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 12px 10px 12px', flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(0,0,0,0.2)' }}>
+
+                        {/* Collapse button — LEFT */}
+                        <motion.button
                           onClick={() => setPredictionOpen(false)}
-                          title="Collapse prediction panel"
-                          style={{
-                            background: 'rgba(255,255,255,0.06)',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            borderRadius: 6,
-                            padding: '3px 6px',
-                            cursor: 'pointer',
-                            color: 'rgba(255,255,255,0.4)',
-                            display: 'flex',
-                            alignItems: 'center',
-                          }}
+                          title="Collapse panel"
+                          whileHover={{ scale: 1.08, background: 'rgba(255,255,255,0.12)', color: '#e2e8f0' }}
+                          whileTap={{ scale: 0.92 }}
+                          style={{ width: 34, height: 34, borderRadius: 8, background: 'rgba(255,255,255,0.07)', border: '1.5px solid rgba(255,255,255,0.15)', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s' }}
                         >
-                          <ChevronRight size={13} />
-                        </button>
+                          <ChevronRight size={15} />
+                        </motion.button>
+
+                        {/* AI Predictions tab */}
+                        {(() => {
+                          const active = rightPanelTab === 'predictions';
+                          return (
+                            <motion.button
+                              onClick={() => setRightPanelTab('predictions')}
+                              whileHover={!active ? { background: 'rgba(0,212,177,0.18)', borderColor: 'rgba(0,212,177,0.5)', color: '#00d4b1', boxShadow: '0 0 14px rgba(0,212,177,0.2)' } : {}}
+                              whileTap={{ scale: 0.95 }}
+                              style={{
+                                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                                padding: '9px 12px', borderRadius: 10, cursor: 'pointer',
+                                fontSize: 12, fontWeight: 800, fontFamily: 'Space Grotesk',
+                                background: active ? 'linear-gradient(135deg, rgba(0,212,177,0.25), rgba(0,212,177,0.12))' : 'rgba(0,212,177,0.07)',
+                                border: `2px solid ${active ? 'rgba(0,212,177,0.6)' : 'rgba(0,212,177,0.25)'}`,
+                                color: active ? '#00d4b1' : '#5eead4',
+                                boxShadow: active ? '0 0 16px rgba(0,212,177,0.25), inset 0 1px 0 rgba(0,212,177,0.1)' : 'none',
+                                transition: 'all 0.15s',
+                              }}>
+                              <Sparkles size={15} />
+                              AI Predictions
+                            </motion.button>
+                          );
+                        })()}
+
+                        {/* Today's Goals tab */}
+                        {(() => {
+                          const active     = rightPanelTab === 'goals';
+                          const doneCount  = goals.filter(g => checkedGoals.has(g.id)).length;
+                          return (
+                            <motion.button
+                              onClick={() => setRightPanelTab('goals')}
+                              whileHover={!active ? { background: 'rgba(167,139,250,0.18)', borderColor: 'rgba(167,139,250,0.5)', color: '#a78bfa', boxShadow: '0 0 14px rgba(167,139,250,0.2)' } : {}}
+                              whileTap={{ scale: 0.95 }}
+                              style={{
+                                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                                padding: '9px 12px', borderRadius: 10, cursor: 'pointer',
+                                fontSize: 12, fontWeight: 800, fontFamily: 'Space Grotesk',
+                                background: active ? 'linear-gradient(135deg, rgba(167,139,250,0.25), rgba(167,139,250,0.12))' : 'rgba(167,139,250,0.07)',
+                                border: `2px solid ${active ? 'rgba(167,139,250,0.6)' : 'rgba(167,139,250,0.25)'}`,
+                                color: active ? '#a78bfa' : '#c4b5fd',
+                                boxShadow: active ? '0 0 16px rgba(167,139,250,0.25), inset 0 1px 0 rgba(167,139,250,0.1)' : 'none',
+                                transition: 'all 0.15s',
+                              }}>
+                              <Target size={20} />
+                              Today's Goals
+                              {goals.length > 0 && (
+                                <span style={{ fontSize: 10, fontWeight: 800, background: active ? 'rgba(167,139,250,0.3)' : 'rgba(167,139,250,0.15)', color: active ? '#c4b5fd' : '#a78bfa', borderRadius: 20, padding: '1px 6px', border: `1px solid ${active ? 'rgba(167,139,250,0.5)' : 'rgba(167,139,250,0.3)'}`, transition: 'all 0.15s' }}>
+                                  {doneCount}/{goals.length}
+                                </span>
+                              )}
+                            </motion.button>
+                          );
+                        })()}
                       </div>
-                      <div className="flex-1 overflow-hidden" style={{ paddingLeft: 28 }}>
-                        <PredictionPanel
-                          prediction={activePrediction}
-                          dayPrediction={dayPrediction}
-                          isLoading={simProgress.active}
-                          selectedSlot={selectedEventId}
-                          onClose={() => setDayPrediction(null)}
-                          isFullscreen={false}
-                          onToggleFullscreen={() => setPredictionFullscreen(true)}
-                        />
+
+                      {/* ── Panel body ── */}
+                      <div className="flex-1 overflow-hidden flex flex-col">
+                        {rightPanelTab === 'predictions' ? (
+                          <PredictionPanel
+                            prediction={activePrediction}
+                            dayPrediction={dayPrediction}
+                            isLoading={simProgress.active}
+                            selectedSlot={selectedEventId}
+                            onClose={() => setDayPrediction(null)}
+                            isFullscreen={false}
+                            onToggleFullscreen={() => setPredictionFullscreen(true)}
+                            retroResult={retroResult}
+                            onClearRetro={() => setRetroResult(null)}
+                            summaryResult={summaryResult}
+                            onClearSummary={() => setSummaryResult(null)}
+                          />
+                        ) : (
+                          <RightPanelGoals
+                            goals={goals}
+                            checkedGoals={checkedGoals}
+                            onToggle={toggleCheckedGoal}
+                            onOpenGoalsModal={() => setShowGoals(true)}
+                          />
+                        )}
                       </div>
                     </>
                   ) : (
@@ -497,47 +945,40 @@ export default function App() {
                     <div className="flex flex-col items-center h-full" style={{ width: 40, paddingTop: 12, gap: 0 }}>
                       <button
                         onClick={() => setPredictionOpen(true)}
-                        title="Expand prediction panel"
-                        style={{
-                          background: 'rgba(0,212,177,0.1)',
-                          border: '1px solid rgba(0,212,177,0.25)',
-                          borderRadius: 6,
-                          padding: '6px 7px',
-                          cursor: 'pointer',
-                          color: '#00d4b1',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          marginBottom: 10,
-                        }}
+                        title="Expand panel"
+                        style={{ background: 'rgba(0,212,177,0.1)', border: '1px solid rgba(0,212,177,0.25)', borderRadius: 6, padding: '6px 7px', cursor: 'pointer', color: '#00d4b1', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}
                       >
                         <ChevronLeft size={13} />
                       </button>
                       <div
-                        style={{
-                          writingMode: 'vertical-rl',
-                          transform: 'rotate(180deg)',
-                          fontSize: 10,
-                          fontWeight: 700,
-                          letterSpacing: '0.12em',
-                          textTransform: 'uppercase',
-                          color: 'rgba(0,212,177,0.35)',
-                          userSelect: 'none',
-                          marginTop: 4,
-                        }}
+                        onClick={() => { setPredictionOpen(true); setRightPanelTab('predictions'); }}
+                        style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(0,212,177,0.35)', userSelect: 'none', marginTop: 4, cursor: 'pointer' }}
                       >
                         AI Prediction
                       </div>
                       <Sparkles size={13} style={{ color: 'rgba(0,212,177,0.2)', marginTop: 10 }} />
+                      {goals.length > 0 && (
+                        <>
+                          <div style={{ height: 1, width: 20, background: 'rgba(255,255,255,0.08)', margin: '10px 0' }} />
+                          <div
+                            onClick={() => { setPredictionOpen(true); setRightPanelTab('goals'); }}
+                            style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(52,211,153,0.4)', userSelect: 'none', cursor: 'pointer' }}
+                          >
+                            Goals
+                          </div>
+                          <Target size={13} style={{ color: 'rgba(52,211,153,0.25)', marginTop: 8 }} />
+                        </>
+                      )}
                     </div>
                   )}
                 </motion.div>
               )}
-          </div>
+          </motion.div>
 
-          <div
-            className="h-full"
-            style={{ display: view === VIEWS.PARALLEL ? 'flex' : 'none', flexDirection: 'column' }}
+          <motion.div
+            animate={{ opacity: view === VIEWS.PARALLEL ? 1 : 0 }}
+            transition={{ duration: 0.38, ease: [0.4, 0, 0.2, 1] }}
+            style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', pointerEvents: view === VIEWS.PARALLEL ? 'auto' : 'none', zIndex: view === VIEWS.PARALLEL ? 2 : 1 }}
           >
             <ParallelDaysView
               profile={profile}
@@ -547,11 +988,12 @@ export default function App() {
               onTreeData={setTreeData}
               onShowFullscreen={setParallelFullscreen}
             />
-          </div>
+          </motion.div>
 
-          <div
-            className="h-full flex"
-            style={{ display: view === VIEWS.TREE ? 'flex' : 'none' }}
+          <motion.div
+            animate={{ opacity: view === VIEWS.TREE ? 1 : 0 }}
+            transition={{ duration: 0.38, ease: [0.4, 0, 0.2, 1] }}
+            style={{ position: 'absolute', inset: 0, display: 'flex', pointerEvents: view === VIEWS.TREE ? 'auto' : 'none', zIndex: view === VIEWS.TREE ? 2 : 1 }}
           >
             <div className="flex-1 overflow-hidden">
               <BranchTreeView
@@ -578,7 +1020,7 @@ export default function App() {
                 />
               </div>
             )}
-          </div>
+          </motion.div>
       </main>
 
       {/* ── Collapsible tree strip ── */}
@@ -623,6 +1065,31 @@ export default function App() {
         onUpdate={handleProfileUpdate}
       />
 
+      <DayGoals
+        isOpen={showGoals}
+        onClose={() => setShowGoals(false)}
+        goals={goals}
+        onGoalsChange={handleGoalsChange}
+      />
+
+      <AnimatePresence>
+        {showRetrospective && (
+          <DayRetrospective
+            goals={goals}
+            checkedGoals={checkedGoals}
+            profile={profile}
+            plannedEvents={timeline.events}
+            onClose={() => setShowRetrospective(false)}
+            onComplete={(result) => {
+              setRetroResult(result);
+              setShowRetrospective(false);
+              setPredictionOpen(true);
+              setRightPanelTab('predictions');
+            }}
+          />
+        )}
+      </AnimatePresence>
+
       <AnimatePresence>
         {showAuth && (
           <AuthModal onClose={() => setShowAuth(false)} onSuccess={handleAccountLogin} />
@@ -641,6 +1108,7 @@ export default function App() {
             choices={timeline.getAllChoices()}
             profile={profile}
             onClose={() => setShowSummary(false)}
+            onComplete={(result) => setSummaryResult(result)}
           />
         )}
       </AnimatePresence>
@@ -654,9 +1122,9 @@ export default function App() {
           display: 'flex', alignItems: 'center', justifyContent: 'space-around',
           padding: '8px 0 calc(8px + env(safe-area-inset-bottom))',
         }}>
-          {VIEW_CONFIG.map(({ id, icon, label }) => {
+          {VIEW_CONFIG.map(({ id, icon, shortLabel, color, colorRgb }) => {
             const active = view === id;
-            const shortLabel = id === VIEWS.SINGLE ? 'Canvas' : id === VIEWS.PARALLEL ? 'Parallel' : 'Tree';
+            const isExplore = id !== VIEWS.SINGLE;
             return (
               <motion.button
                 key={id}
@@ -664,14 +1132,23 @@ export default function App() {
                 whileTap={{ scale: 0.9 }}
                 style={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
-                  padding: '6px 16px', borderRadius: 12, cursor: 'pointer',
-                  background: active ? 'rgba(0,212,177,0.12)' : 'transparent',
-                  border: active ? '1px solid rgba(0,212,177,0.25)' : '1px solid transparent',
-                  color: active ? '#00d4b1' : '#475569',
+                  padding: '6px 14px', borderRadius: 12, cursor: 'pointer', position: 'relative',
+                  background: active ? `rgba(${colorRgb},0.15)` : isExplore ? `rgba(${colorRgb},0.06)` : 'transparent',
+                  border: active ? `1px solid rgba(${colorRgb},0.35)` : isExplore ? `1px solid rgba(${colorRgb},0.18)` : '1px solid transparent',
+                  color: active ? color : isExplore ? color : '#475569',
                   minWidth: 70,
+                  boxShadow: active ? `0 0 10px rgba(${colorRgb},0.2)` : 'none',
                 }}
               >
-                <span style={{ fontSize: 18 }}>{icon}</span>
+                {isExplore && !active && (
+                  <span style={{
+                    position: 'absolute', top: -5, right: 6,
+                    fontSize: 8, fontWeight: 800, color, fontFamily: 'Space Grotesk',
+                    background: `rgba(${colorRgb},0.18)`, border: `1px solid rgba(${colorRgb},0.35)`,
+                    borderRadius: 20, padding: '1px 5px', textTransform: 'uppercase', letterSpacing: '0.05em',
+                  }}>new</span>
+                )}
+                <span style={{ fontSize: 18, opacity: active ? 1 : isExplore ? 0.85 : 0.5 }}>{icon}</span>
                 <span style={{ fontSize: 10, fontWeight: 700, fontFamily: 'Space Grotesk', letterSpacing: '0.02em' }}>{shortLabel}</span>
               </motion.button>
             );

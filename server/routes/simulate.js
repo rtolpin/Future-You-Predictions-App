@@ -1,5 +1,5 @@
 import express from 'express';
-import { simulateDecision, simulateDecisionStream, generateDailySummary, simulateDayFlow, compareDays, simulateDecisionTree } from '../services/claudeService.js';
+import { simulateDecision, simulateDecisionStream, generateDailySummary, simulateDayFlow, compareDays, simulateDecisionTree, generateRetrospective } from '../services/claudeService.js';
 
 const router = express.Router();
 
@@ -53,6 +53,16 @@ router.post('/summary', async (req, res) => {
     res.json(result);
   } catch (err) {
     console.error('Summary error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/retrospective', async (req, res) => {
+  try {
+    const result = await generateRetrospective(req.body);
+    res.json(result);
+  } catch (err) {
+    console.error('Retrospective error:', err);
     res.status(500).json({ error: err.message });
   }
 });

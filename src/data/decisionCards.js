@@ -8,6 +8,8 @@ export const CARD_CATEGORIES = {
   CHORES: 'chores',
   APPEARANCE: 'appearance',
   MOOD: 'mood',
+  FOOD: 'food',
+  CUSTOM: 'custom',
 };
 
 export const CATEGORY_META = {
@@ -18,8 +20,10 @@ export const CATEGORY_META = {
   transport: { label: '🚌 Transportation',      color: '#38bdf8', glow: 'rgba(56,189,248,0.3)' },
   study:     { label: '📚 Study & Learning',    color: '#a3e635', glow: 'rgba(163,230,53,0.3)' },
   chores:    { label: '🧹 Chores & Home Tasks', color: '#fb923c', glow: 'rgba(251,146,60,0.3)' },
-  appearance:{ label: '👗 Appearance',        color: '#a78bfa', glow: 'rgba(167,139,250,0.3)' },
-  mood:      { label: '😐 Mood Starters',     color: '#f87171', glow: 'rgba(248,113,113,0.3)' },
+  appearance:{ label: '👗 Appearance',          color: '#a78bfa', glow: 'rgba(167,139,250,0.3)' },
+  mood:      { label: '😐 Mood Starters',       color: '#f87171', glow: 'rgba(248,113,113,0.3)' },
+  food:      { label: '🍽️ Food & Meals',        color: '#fbbf24', glow: 'rgba(251,191,36,0.3)'  },
+  custom:    { label: '⭐ My Custom Events',     color: '#e879f9', glow: 'rgba(232,121,249,0.3)' },
 };
 
 export const decisionCards = [
@@ -75,6 +79,15 @@ export const decisionCards = [
   { id: 'act-hair-red',      category: CARD_CATEGORIES.ACTIVITY, icon: '🔴', label: 'Hair Colored — Red',         description: 'Bold red / auburn' },
   { id: 'act-hair-custom',   category: CARD_CATEGORIES.ACTIVITY, icon: '🖌️', label: 'Hair Colored — Custom',      description: 'Tap event to set color' },
 
+  // ── FOOD & MEALS CARDS ──
+  { id: 'food-sleep',        category: CARD_CATEGORIES.FOOD, icon: '💤', label: 'Sleep',                    description: 'Overnight rest block' },
+  { id: 'food-eat',          category: CARD_CATEGORIES.FOOD, icon: '🍽️', label: 'Eat',                      description: 'General meal' },
+  { id: 'food-breakfast',    category: CARD_CATEGORIES.FOOD, icon: '🍳', label: 'Eat Breakfast',             description: 'Morning fuel' },
+  { id: 'food-lunch',        category: CARD_CATEGORIES.FOOD, icon: '🥗', label: 'Eat Lunch',                 description: 'Midday meal' },
+  { id: 'food-dinner',       category: CARD_CATEGORIES.FOOD, icon: '🍜', label: 'Eat Dinner',                description: 'Evening meal' },
+  { id: 'food-lunch-coffee',  category: CARD_CATEGORIES.FOOD, icon: '☕', label: 'Eat Lunch at Coffee Shop',  description: 'Lunch out with good vibes' },
+  { id: 'food-shabbat-dinner',category: CARD_CATEGORIES.FOOD, icon: '🕯️', label: 'Shabbat Dinner',             description: 'Candles, challah & family table' },
+
   // ── PERSONAL ROUTINE CARDS ──
   { id: 'per-wake-up',        category: CARD_CATEGORIES.PERSONAL, icon: '⏰', label: 'Wake Up',                 description: 'Start the day' },
   { id: 'per-morning-routine',category: CARD_CATEGORIES.PERSONAL, icon: '🌅', label: 'Morning Routine',         description: 'Ease into the day' },
@@ -104,6 +117,7 @@ export const decisionCards = [
   { id: 'per-morning-prayers', category: CARD_CATEGORIES.PERSONAL, icon: '🙏', label: 'Morning Prayers',          description: 'Start the day with faith' },
   { id: 'per-pray',            category: CARD_CATEGORIES.PERSONAL, icon: '⭐', label: 'Pray',                    description: 'Moment of prayer & reflection' },
   { id: 'per-prayer-service',  category: CARD_CATEGORIES.PERSONAL, icon: '⛪', label: 'Attend Prayer Service',    description: 'Communal worship' },
+  { id: 'per-shabbat-services',category: CARD_CATEGORIES.PERSONAL, icon: '✡️', label: 'Shabbat Services',         description: 'Friday night or Shabbat morning synagogue' },
 
   // ── TRANSPORTATION ──
   { id: 'tra-subway',       category: CARD_CATEGORIES.TRANSPORT, icon: '🚇', label: 'Take the Subway',           description: 'Underground city transit' },
@@ -115,6 +129,8 @@ export const decisionCards = [
   { id: 'tra-ferry',        category: CARD_CATEGORIES.TRANSPORT, icon: '⛴️', label: 'Take the Ferry',            description: 'Water transit crossing' },
   { id: 'tra-train',        category: CARD_CATEGORIES.TRANSPORT, icon: '🚆', label: 'Take the Train',            description: 'Rail travel' },
   { id: 'tra-airport',      category: CARD_CATEGORIES.TRANSPORT, icon: '✈️', label: 'Go to the Airport',         description: 'Departures & arrivals' },
+  { id: 'tra-fly',          category: CARD_CATEGORIES.TRANSPORT, icon: '🛫', label: 'Take a Flight',             description: 'Fly to your destination' },
+  { id: 'tra-lyft',         category: CARD_CATEGORIES.TRANSPORT, icon: '🩷', label: 'Take a Lyft',               description: 'Rideshare with Lyft' },
   { id: 'tra-travel',       category: CARD_CATEGORIES.TRANSPORT, icon: '🧳', label: 'Travel / Take a Trip',      description: 'Multi-step journey' },
   { id: 'tra-taxi',         category: CARD_CATEGORIES.TRANSPORT, icon: '🚕', label: 'Take a Taxi / Cab',         description: 'Traditional taxi ride' },
   { id: 'tra-scooter',      category: CARD_CATEGORIES.TRANSPORT, icon: '🛵', label: 'Ride a Scooter',            description: 'Electric / moped scooter' },
@@ -134,7 +150,9 @@ export const decisionCards = [
   { id: 'stu-workshop',      category: CARD_CATEGORIES.STUDY, icon: '🛠️', label: 'Attend a Workshop',          description: 'Hands-on skill building' },
   { id: 'stu-new-language',  category: CARD_CATEGORIES.STUDY, icon: '🗣️', label: 'Study New Language',          description: 'Immersive language learning' },
   { id: 'stu-duolingo',      category: CARD_CATEGORIES.STUDY, icon: '🦜', label: 'Use Duolingo App',            description: 'Daily language streak' },
-  { id: 'stu-new-skill',     category: CARD_CATEGORIES.STUDY, icon: '🧠', label: 'Study a New Skill',           description: 'Expand your abilities' },
+  { id: 'stu-new-skill',       category: CARD_CATEGORIES.STUDY, icon: '🧠', label: 'Study a New Skill',           description: 'Expand your abilities' },
+  { id: 'stu-jewish-learning', category: CARD_CATEGORIES.STUDY, icon: '📜', label: 'Jewish Learning Class',        description: 'Torah, Talmud, or Jewish study' },
+  { id: 'stu-bible-study',     category: CARD_CATEGORIES.STUDY, icon: '✝️', label: 'Bible Study Class',             description: 'Scripture study & group discussion' },
 
   // ── CHORES & HOME TASKS ──
   { id: 'cho-garbage',      category: CARD_CATEGORIES.CHORES, icon: '🗑️', label: 'Take Out Garbage',          description: 'Bins out, fresh start' },

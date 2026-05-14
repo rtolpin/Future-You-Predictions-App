@@ -15,21 +15,16 @@ export function SimulationLoadingScreen({ active, currentAction }) {
   const [insightIdx, setInsightIdx] = useState(0);
   const [progress, setProgress] = useState(0);
 
-  // Fake easing progress: fast → 60%, then slow-creep to 90%, snap 100% on done
+  // Continuous asymptotic: p = 99 × (1 - e^(-t/12)) — always moving, never stuck
   useEffect(() => {
-    if (!active) {
-      setProgress(0);
-      setInsightIdx(0);
-      return;
-    }
+    if (!active) { setProgress(0); setInsightIdx(0); return; }
     setProgress(0);
     const startTime = Date.now();
     const timer = setInterval(() => {
-      const elapsed = (Date.now() - startTime) / 1000; // seconds
-      // Asymptotic: p = 90 * (1 - e^(-elapsed/10))
-      const p = Math.floor(90 * (1 - Math.exp(-elapsed / 10)));
+      const elapsed = (Date.now() - startTime) / 1000;
+      const p = Math.min(99, Math.floor(99 * (1 - Math.exp(-elapsed / 12))));
       setProgress(p);
-    }, 120);
+    }, 100);
     return () => clearInterval(timer);
   }, [active]);
 

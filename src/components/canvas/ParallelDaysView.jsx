@@ -139,53 +139,49 @@ export function ParallelDaysView({ profile, count = 2, mood, outfits, onTreeData
   return (
     <>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
-        <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ height: '100%', display: 'flex', minHeight: 0 }}>
 
-          {/* Compare button bar */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px 20px', gap: 12, flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.07)', background: 'rgba(0,0,0,0.25)' }}>
-            {!canCompare && (
-              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', fontFamily: 'Space Grotesk' }}>
-                Add events to both paths to enable comparison
-              </p>
-            )}
-            <motion.button
-              onClick={handleCompare}
-              disabled={!canCompare}
-              whileHover={canCompare ? { scale: 1.04, boxShadow: '0 0 32px rgba(0,212,177,0.5), 0 0 64px rgba(167,139,250,0.25)' } : {}}
-              whileTap={{ scale: 0.96 }}
-              style={{ position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', gap: 10, padding: '11px 28px', borderRadius: 16, background: canCompare ? 'linear-gradient(135deg, #00d4b1 0%, #00bfa0 35%, #a78bfa 100%)' : 'rgba(255,255,255,0.06)', color: canCompare ? '#000' : 'rgba(255,255,255,0.25)', fontFamily: 'Space Grotesk', fontWeight: 800, fontSize: 14, border: canCompare ? '1px solid rgba(255,255,255,0.25)' : '1px solid rgba(255,255,255,0.08)', boxShadow: canCompare ? '0 0 20px rgba(0,212,177,0.4), inset 0 1px 0 rgba(255,255,255,0.3)' : 'none', cursor: canCompare ? 'pointer' : 'not-allowed', opacity: canCompare ? 1 : 0.5 }}
-            >
-              {canCompare && (
-                <motion.div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.35) 50%, transparent 65%)', pointerEvents: 'none' }} animate={{ x: ['-100%', '200%'] }} transition={{ duration: 2.5, repeat: Infinity, ease: 'linear', repeatDelay: 2 }} />
-              )}
-              <Zap size={16} fill={canCompare ? 'currentColor' : 'none'} style={{ position: 'relative', zIndex: 1 }} />
-              <span style={{ position: 'relative', zIndex: 1 }}>Simulate &amp; Compare Days</span>
-              {canCompare && (
-                <div style={{ position: 'relative', zIndex: 1, display: 'flex', gap: 4 }}>
-                  {timelines.slice(0, count).map((tl, i) => (
-                    <span key={i} style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 5, padding: '1px 6px', fontSize: 10, fontWeight: 900, color: DAY_CONFIGS[i].color }}>
-                      {DAY_CONFIGS[i].label} {tl.events.length}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </motion.button>
+          {/* Shared card library — full height, unaffected by compare bar */}
+          <div style={{ width: 220, flexShrink: 0, borderRight: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.25)', overflowY: activeCard ? 'hidden' : 'auto', display: 'flex', flexDirection: 'column' }}>
+            <CardLibrary />
           </div>
 
-          {/* Main layout: shared library + canvases */}
-          <div style={{ flex: 1, display: 'flex', minHeight: 0, overflow: 'hidden' }}>
+          {/* Right side: compare bar + path canvases */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
 
-            {/* Shared card library */}
-            <div style={{ width: 220, flexShrink: 0, borderRight: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.25)', overflowY: activeCard ? 'hidden' : 'auto', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ padding: '10px 14px 6px', borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
-                <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', fontFamily: 'Space Grotesk' }}>Card Library</p>
-                <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', fontFamily: 'DM Sans', marginTop: 2 }}>Drag cards to Path A or Path B</p>
-              </div>
-              <CardLibrary />
+            {/* Compare button bar */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px 20px', gap: 12, flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.07)', background: 'rgba(0,0,0,0.25)' }}>
+              {!canCompare && (
+                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', fontFamily: 'Space Grotesk' }}>
+                  Add events to both paths to enable comparison
+                </p>
+              )}
+              <motion.button
+                onClick={handleCompare}
+                disabled={!canCompare}
+                whileHover={canCompare ? { scale: 1.04, boxShadow: '0 0 32px rgba(0,212,177,0.5), 0 0 64px rgba(167,139,250,0.25)' } : {}}
+                whileTap={{ scale: 0.96 }}
+                style={{ position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', gap: 10, padding: '11px 28px', borderRadius: 16, background: canCompare ? 'linear-gradient(135deg, #00d4b1 0%, #00bfa0 35%, #a78bfa 100%)' : 'rgba(255,255,255,0.06)', color: canCompare ? '#000' : 'rgba(255,255,255,0.25)', fontFamily: 'Space Grotesk', fontWeight: 800, fontSize: 14, border: canCompare ? '1px solid rgba(255,255,255,0.25)' : '1px solid rgba(255,255,255,0.08)', boxShadow: canCompare ? '0 0 20px rgba(0,212,177,0.4), inset 0 1px 0 rgba(255,255,255,0.3)' : 'none', cursor: canCompare ? 'pointer' : 'not-allowed', opacity: canCompare ? 1 : 0.5 }}
+              >
+                {canCompare && (
+                  <motion.div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.35) 50%, transparent 65%)', pointerEvents: 'none' }} animate={{ x: ['-100%', '200%'] }} transition={{ duration: 2.5, repeat: Infinity, ease: 'linear', repeatDelay: 2 }} />
+                )}
+                <Zap size={16} fill={canCompare ? 'currentColor' : 'none'} style={{ position: 'relative', zIndex: 1 }} />
+                <span style={{ position: 'relative', zIndex: 1 }}>Simulate &amp; Compare Days</span>
+                {canCompare && (
+                  <div style={{ position: 'relative', zIndex: 1, display: 'flex', gap: 4 }}>
+                    {timelines.slice(0, count).map((tl, i) => (
+                      <span key={i} style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 5, padding: '1px 6px', fontSize: 10, fontWeight: 900, color: DAY_CONFIGS[i].color }}>
+                        {DAY_CONFIGS[i].label} {tl.events.length}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </motion.button>
             </div>
 
             {/* Path canvases */}
-            <div style={{ flex: 1, display: 'flex', minWidth: 0 }}>
+            <div style={{ flex: 1, display: 'flex', minHeight: 0, minWidth: 0 }}>
               {timelines.map((timeline, i) => (
                 <div key={i} style={{ flex: 1, minWidth: 0, overflow: 'hidden', borderLeft: i > 0 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
                   <DayCanvas

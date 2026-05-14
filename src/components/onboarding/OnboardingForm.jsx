@@ -286,17 +286,28 @@ export function OnboardingForm({ onComplete }) {
                 </motion.button>
               </div>
 
-              <p className="text-xs text-slate-600">No account needed · Free to explore</p>
-
               <motion.button
                 onClick={skip}
-                whileHover={{ color: '#94a3b8' }}
-                className="flex items-center gap-1.5 text-slate-600 transition-colors cursor-pointer mt-1"
-                style={{ fontSize: 13, fontFamily: 'DM Sans' }}
+                whileHover={{ scale: 1.03, boxShadow: '0 0 20px rgba(0,212,177,0.25)', borderColor: 'rgba(0,212,177,0.5)' }}
+                whileTap={{ scale: 0.97 }}
+                className="flex items-center gap-2 cursor-pointer"
+                style={{
+                  padding: '10px 22px', borderRadius: 14,
+                  background: 'rgba(0,212,177,0.08)',
+                  border: '1.5px solid rgba(0,212,177,0.3)',
+                  color: '#00d4b1', fontSize: 14, fontWeight: 700,
+                  fontFamily: 'Space Grotesk',
+                  boxShadow: '0 0 12px rgba(0,212,177,0.12)',
+                  transition: 'all 0.2s',
+                }}
               >
-                Skip setup and explore now
-                <ArrowRight size={13} />
+                ✨ Skip setup and explore now
+                <ArrowRight size={15} />
               </motion.button>
+
+              <p style={{ fontSize: 12, fontWeight: 600, color: '#34d399', fontFamily: 'Space Grotesk', letterSpacing: '0.01em' }}>
+                No account needed · Free to explore
+              </p>
             </motion.div>
 
           </div>
@@ -445,9 +456,16 @@ export function OnboardingForm({ onComplete }) {
             </div>
             <motion.button
               onClick={skip}
-              whileHover={{ color: '#94a3b8' }}
-              className="flex items-center gap-1.5 transition-colors cursor-pointer"
-              style={{ color: '#475569', fontSize: 13, fontFamily: 'DM Sans', padding: '6px 10px' }}
+              whileHover={{ scale: 1.04, borderColor: 'rgba(0,212,177,0.45)', color: '#00d4b1', boxShadow: '0 0 14px rgba(0,212,177,0.2)' }}
+              whileTap={{ scale: 0.96 }}
+              className="flex items-center gap-2 cursor-pointer"
+              style={{
+                padding: '7px 16px', borderRadius: 10,
+                background: 'rgba(0,212,177,0.07)',
+                border: '1.5px solid rgba(0,212,177,0.25)',
+                color: '#5eead4', fontSize: 13, fontWeight: 700,
+                fontFamily: 'Space Grotesk', transition: 'all 0.15s',
+              }}
             >
               Skip setup <ArrowRight size={13} />
             </motion.button>

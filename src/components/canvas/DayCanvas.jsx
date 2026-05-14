@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useIsMobile } from '../../hooks/useIsMobile.js';
 
 // Returns props for a button that fires rapidly when held down
@@ -21,16 +22,16 @@ import { Play, RotateCcw, Clock, Maximize2, Minimize2, ChevronLeft, ChevronRight
 import { DecisionCard } from './DecisionCard.jsx';
 import { CardLibrary } from './CardLibrary.jsx';
 import { EventBlock } from './EventBlock.jsx';
-import { AppearanceSelector } from './AppearanceSelector.jsx';
-import { MoodStarterSelector } from './MoodStarterSelector.jsx';
 import { CATEGORY_META } from '../../data/decisionCards.js';
 import { EventDetailModal } from './EventDetailModal.jsx';
+import { MoodPickerModal, MOODS } from './MoodPickerModal.jsx';
+import { OutfitPickerModal, OUTFIT_GROUPS, isCustomOutfit, customOutfitLabel } from './OutfitPickerModal.jsx';
 
 const HOUR_HEIGHT = 80;
 const SNAP = 15;
 
 
-const SLOT_HEIGHT = HOUR_HEIGHT / 2; // 40px per 15-min slot — large target area
+const SLOT_HEIGHT = HOUR_HEIGHT / 4; // 20px per 15-min slot — matches visual grid exactly
 
 function SlotDropZone({ minutes, isDraggingAny, startHour, idPrefix = '', fmtTime }) {
   const { isOver, setNodeRef } = useDroppable({ id: `${idPrefix}slot-${minutes}` });
@@ -129,10 +130,21 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
   const isMobile = useIsMobile();
   const [showMobileLibrary, setShowMobileLibrary] = useState(false);
   const [activeCard, setActiveCard] = useState(null);
-  const [scrolled, setScrolled] = useState(false);
+  const [scrolled, setScrolled]         = useState(false);
+  const [panelsHidden, setPanelsHidden] = useState(false);
+  const lastScrollTop = useRef(0);
   const [fullscreen, setFullscreen] = useState(false);
-  const [moodOpen, setMoodOpen] = useState(defaultPanelsOpen);
-  const [outfitOpen, setOutfitOpen] = useState(defaultPanelsOpen);
+
+  // Escape key exits fullscreen
+  useEffect(() => {
+    if (!fullscreen) return;
+    const onKey = (e) => { if (e.key === 'Escape') setFullscreen(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [fullscreen]);
+
+  const [showMoodModal, setShowMoodModal]     = useState(false);
+  const [showOutfitModal, setShowOutfitModal] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(true);
   const [editingEvent, setEditingEvent] = useState(null);
   const [startHour, setStartHour] = useState(5);
@@ -167,7 +179,17 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
   const scrollRef = useRef(null);
 
   const handleScroll = useCallback((e) => {
-    setScrolled(e.currentTarget.scrollTop > 40);
+    const top  = e.currentTarget.scrollTop;
+    const prev = lastScrollTop.current;
+    setScrolled(top > 40);
+    if (top === 0) {
+      setPanelsHidden(false);        // always visible at top
+    } else if (top > prev + 6) {
+      setPanelsHidden(true);         // scrolling down → hide
+    } else if (top < prev - 6) {
+      setPanelsHidden(false);        // scrolling up → show
+    }
+    lastScrollTop.current = top;
   }, []);
 
   const [overSlotMinutes, setOverSlotMinutes] = useState(null);
@@ -217,12 +239,12 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
   const filledCount = timeline.events.length;
 
   const outerClass = fullscreen
-    ? 'fixed inset-0 z-50 flex overflow-hidden'
+    ? 'flex overflow-hidden'
     : 'h-full flex overflow-hidden';
 
   const inner = (
     <>
-      <div className={outerClass} style={{ background: '#09090f' }}>
+      <div className={outerClass} style={{ background: '#09090f', ...(fullscreen ? { position: 'fixed', inset: 0, zIndex: 9990 } : {}) }}>
 
         {/* Card Library — desktop: collapsible sidebar | mobile: bottom drawer */}
         {!fullscreen && !noOwnContext && !isMobile && (
@@ -531,73 +553,87 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
             </div>
           </div>
 
-          {/* ── Hide All / Show All control bar — hidden in compact mode ── */}
-          {!compact && (() => {
-            const allOpen = moodOpen && outfitOpen;
-            const allClosed = !moodOpen && !outfitOpen;
-            return (
-              <div
-                className="shrink-0 flex items-center justify-center"
-                style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.2)', padding: '6px 16px', gap: 8 }}
-              >
-                <motion.button
-                  onClick={() => { setMoodOpen(true); setOutfitOpen(true); }}
-                  whileHover={{ scale: 1.04, background: 'rgba(0,212,177,0.15)', borderColor: 'rgba(0,212,177,0.5)' }}
-                  whileTap={{ scale: 0.96 }}
-                  className="flex items-center cursor-pointer font-bold transition-all"
-                  style={{
-                    gap: 6, padding: '6px 18px', borderRadius: 20, fontSize: 12,
-                    fontFamily: 'Space Grotesk',
-                    background: allOpen ? 'rgba(0,212,177,0.15)' : 'rgba(255,255,255,0.05)',
-                    border: `1.5px solid ${allOpen ? 'rgba(0,212,177,0.45)' : 'rgba(255,255,255,0.12)'}`,
-                    color: allOpen ? '#00d4b1' : '#94a3b8',
-                  }}
-                >
-                  ▼ Show Top Panels
-                </motion.button>
 
-                <div style={{ width: 1, height: 18, background: 'rgba(255,255,255,0.08)' }} />
+          {!compact && !fullscreen && (
+            <div
+              style={{
+                overflow: 'hidden',
+                flexShrink: 0,
+                maxHeight: panelsHidden ? 0 : 120,
+                opacity: panelsHidden ? 0 : 1,
+                pointerEvents: panelsHidden ? 'none' : 'auto',
+                transition: 'max-height 0.28s ease, opacity 0.22s ease',
+              }}
+            >
+              {/* ── Mood picker bar ── */}
+              {(() => {
+                const moodEntry = MOODS.find(m => m.id === selectedMood);
+                const isCustomMood = selectedMood && !moodEntry;
+                return (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.18)', flexShrink: 0, minHeight: 38 }}>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: '#f59e0b', fontFamily: 'Space Grotesk', whiteSpace: 'nowrap', letterSpacing: '0.02em', textShadow: '0 0 10px rgba(245,158,11,0.5)' }}>🎭 Mood</span>
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                      {selectedMood ? (
+                        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+                          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '3px 10px', borderRadius: 20, background: moodEntry ? `rgba(${moodEntry.rgb},0.15)` : 'rgba(167,139,250,0.15)', border: `1px solid ${moodEntry ? `rgba(${moodEntry.rgb},0.4)` : 'rgba(167,139,250,0.4)'}` }}>
+                          <span style={{ fontSize: 13 }}>{moodEntry?.icon ?? '🎨'}</span>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: moodEntry?.color ?? '#a78bfa', fontFamily: 'Space Grotesk' }}>{moodEntry?.label ?? selectedMood}</span>
+                          <button onClick={() => onMoodChange(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: moodEntry?.color ?? '#a78bfa', display: 'flex', alignItems: 'center', padding: 0, fontSize: 11, lineHeight: 1 }}>×</button>
+                        </motion.div>
+                      ) : null}
+                    </div>
+                    <motion.button onClick={() => setShowMoodModal(true)}
+                      whileHover={{ scale: 1.05, boxShadow: '0 0 18px rgba(245,158,11,0.55)', background: 'linear-gradient(135deg,#f59e0b,#f97316)', color: '#000' }}
+                      whileTap={{ scale: 0.95 }}
+                      style={{ padding: '6px 14px', borderRadius: 9, fontSize: 12, fontWeight: 800, fontFamily: 'Space Grotesk', cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.15s', background: selectedMood ? 'rgba(245,158,11,0.12)' : 'linear-gradient(135deg, rgba(245,158,11,0.35), rgba(249,115,22,0.25))', border: `1.5px solid ${selectedMood ? 'rgba(245,158,11,0.35)' : 'rgba(245,158,11,0.7)'}`, color: '#f59e0b', boxShadow: selectedMood ? 'none' : '0 0 12px rgba(245,158,11,0.3)' }}>
+                      {selectedMood ? 'Change' : '+ Add Mood'}
+                    </motion.button>
+                  </div>
+                );
+              })()}
 
-                <motion.button
-                  onClick={() => { setMoodOpen(false); setOutfitOpen(false); }}
-                  whileHover={{ scale: 1.04, background: 'rgba(248,113,113,0.12)', borderColor: 'rgba(248,113,113,0.4)' }}
-                  whileTap={{ scale: 0.96 }}
-                  className="flex items-center cursor-pointer font-bold transition-all"
-                  style={{
-                    gap: 6, padding: '6px 18px', borderRadius: 20, fontSize: 12,
-                    fontFamily: 'Space Grotesk',
-                    background: allClosed ? 'rgba(248,113,113,0.12)' : 'rgba(255,255,255,0.05)',
-                    border: `1.5px solid ${allClosed ? 'rgba(248,113,113,0.4)' : 'rgba(255,255,255,0.12)'}`,
-                    color: allClosed ? '#f87171' : '#94a3b8',
-                  }}
-                >
-                  ▲ Hide Top Panels
-                </motion.button>
-              </div>
-            );
-          })()}
-
-          {!compact && (
-            <>
-          <PanelStrip
-            label="🎭 Starting Mood"
-            isOpen={moodOpen && !scrolled}
-            onToggle={() => setMoodOpen(o => !o)}
-            summary={selectedMood ? `${selectedMood.charAt(0).toUpperCase() + selectedMood.slice(1)} selected` : 'None selected'}
-            accentColor="#f59e0b"
-          >
-            <MoodStarterSelector selected={selectedMood} onChange={onMoodChange} />
-          </PanelStrip>
-          <PanelStrip
-            label="👗 Today's Look"
-            isOpen={outfitOpen && !scrolled}
-            onToggle={() => setOutfitOpen(o => !o)}
-            summary={selectedOutfits.length > 0 ? `${selectedOutfits.length} outfit${selectedOutfits.length !== 1 ? 's' : ''} selected` : 'None selected'}
-            accentColor="#a78bfa"
-          >
-            <AppearanceSelector selected={selectedOutfits} onChange={onOutfitsChange} />
-          </PanelStrip>
-            </>
+              {/* ── Outfit picker bar ── */}
+              {(() => {
+                const allItems = OUTFIT_GROUPS.flatMap(g => g.items);
+                return (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.18)', flexShrink: 0, minHeight: 38 }}>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: '#a78bfa', fontFamily: 'Space Grotesk', whiteSpace: 'nowrap', letterSpacing: '0.02em', textShadow: '0 0 10px rgba(167,139,250,0.5)' }}>👗 Today's Outfit</span>
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 4, minWidth: 0, overflow: 'hidden' }}>
+                      {selectedOutfits.length > 0 ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, overflow: 'hidden' }}>
+                          {selectedOutfits.slice(0, 3).map(id => {
+                            const item = allItems.find(o => o.id === id);
+                            const label = item ? item.label : isCustomOutfit(id) ? customOutfitLabel(id) : null;
+                            const icon  = item ? item.icon : isCustomOutfit(id) ? '✏️' : null;
+                            return label ? (
+                              <motion.span key={id} initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }}
+                                title={label}
+                                style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 20, background: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.3)', fontSize: 11, color: '#a78bfa', fontFamily: 'Space Grotesk', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                <span style={{ fontSize: 13 }}>{icon}</span>
+                                <span>{label}</span>
+                              </motion.span>
+                            ) : null;
+                          })}
+                          {selectedOutfits.length > 3 && (
+                            <span style={{ fontSize: 11, color: '#64748b', fontFamily: 'Space Grotesk' }}>+{selectedOutfits.length - 3}</span>
+                          )}
+                          <button onClick={() => onOutfitsChange([])} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#475569', fontSize: 11, padding: '0 4px' }}
+                            onMouseEnter={e => e.target.style.color = '#94a3b8'} onMouseLeave={e => e.target.style.color = '#475569'}>
+                            ×
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                    <motion.button onClick={() => setShowOutfitModal(true)}
+                      whileHover={{ scale: 1.05, boxShadow: '0 0 18px rgba(167,139,250,0.55)', background: 'linear-gradient(135deg,#a78bfa,#9061f9)', color: '#fff' }}
+                      whileTap={{ scale: 0.95 }}
+                      style={{ padding: '6px 14px', borderRadius: 9, fontSize: 12, fontWeight: 800, fontFamily: 'Space Grotesk', cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.15s', background: selectedOutfits.length > 0 ? 'rgba(167,139,250,0.12)' : 'linear-gradient(135deg, rgba(167,139,250,0.35), rgba(144,97,249,0.25))', border: `1.5px solid ${selectedOutfits.length > 0 ? 'rgba(167,139,250,0.35)' : 'rgba(167,139,250,0.7)'}`, color: '#c4b5fd', boxShadow: selectedOutfits.length > 0 ? 'none' : '0 0 12px rgba(167,139,250,0.3)' }}>
+                      {selectedOutfits.length > 0 ? 'Change' : '+ Add Outfit'}
+                    </motion.button>
+                  </div>
+                );
+              })()}
+            </div>
           )}
 
           {/* Calendar grid */}
@@ -766,13 +802,44 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
     </DragOverlay>
   );
 
+  const canvas = noOwnContext ? inner : (
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
+      {inner}
+      {dragOverlay}
+    </DndContext>
+  );
+
   return (
     <>
-    {noOwnContext ? inner : (
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
-        {inner}
-        {dragOverlay}
-      </DndContext>
+    {fullscreen ? createPortal(canvas, document.body) : canvas}
+
+    {/* Fullscreen exit button — rendered via portal so it's always above everything */}
+    {fullscreen && createPortal(
+      <motion.button
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -8 }}
+        onClick={() => setFullscreen(false)}
+        whileHover={{ scale: 1.05, boxShadow: '0 0 24px rgba(0,212,177,0.5)' }}
+        whileTap={{ scale: 0.95 }}
+        style={{
+          position: 'fixed', top: 12, left: '50%', transform: 'translateX(-50%)',
+          zIndex: 9999,
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '9px 22px', borderRadius: 24,
+          background: 'rgba(9,9,15,0.95)',
+          border: '1.5px solid rgba(0,212,177,0.5)',
+          color: '#00d4b1', cursor: 'pointer',
+          fontSize: 13, fontWeight: 800, fontFamily: 'Space Grotesk',
+          boxShadow: '0 0 18px rgba(0,212,177,0.25), 0 4px 16px rgba(0,0,0,0.5)',
+          backdropFilter: 'blur(12px)',
+        }}
+      >
+        <Minimize2 size={14} />
+        Exit Fullscreen
+        <span style={{ fontSize: 10, color: 'rgba(0,212,177,0.5)', fontFamily: 'Space Grotesk', marginLeft: 4 }}>esc</span>
+      </motion.button>,
+      document.body
     )}
 
     {/* Event detail modal */}
@@ -782,6 +849,28 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
           event={editingEvent}
           onClose={() => setEditingEvent(null)}
           onSave={(eventId, details) => timeline.updateDetails(eventId, details)}
+        />
+      )}
+    </AnimatePresence>
+
+    {/* Mood picker modal */}
+    <AnimatePresence>
+      {showMoodModal && (
+        <MoodPickerModal
+          current={selectedMood}
+          onConfirm={(mood) => onMoodChange(mood)}
+          onClose={() => setShowMoodModal(false)}
+        />
+      )}
+    </AnimatePresence>
+
+    {/* Outfit picker modal */}
+    <AnimatePresence>
+      {showOutfitModal && (
+        <OutfitPickerModal
+          current={selectedOutfits}
+          onConfirm={(outfits) => onOutfitsChange(outfits)}
+          onClose={() => setShowOutfitModal(false)}
         />
       )}
     </AnimatePresence>

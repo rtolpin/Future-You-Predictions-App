@@ -75,6 +75,20 @@ export async function simulateDecisionTree({ paths, nodeLabels, profile, mood, o
   return res.json();
 }
 
+export async function generateRetrospective({ goals, goalOutcomes, reflection, actualEvents, profile, plannedEvents, actualMood, actualEnergy }) {
+  const res = await fetch(`${API_BASE}/simulate/retrospective`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ goals, goalOutcomes, reflection, actualEvents, profile, plannedEvents, actualMood, actualEnergy }),
+  });
+  if (!res.ok) {
+    let msg = `Server error (${res.status})`;
+    try { const body = await res.json(); if (body?.error) msg = body.error; } catch {}
+    throw new Error(msg);
+  }
+  return res.json();
+}
+
 export async function generateDailySummary({ choices, profile }) {
   const res = await fetch(`${API_BASE}/simulate/summary`, {
     method: 'POST',

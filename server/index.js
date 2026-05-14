@@ -20,7 +20,7 @@ const PORT = process.env.PORT || 3001;
 // In production the frontend is served from the same origin, so no CORS needed.
 // In development allow Vite dev server.
 app.use(cors({
-  origin: IS_PROD ? false : (process.env.FRONTEND_URL || 'http://localhost:5173'),
+  origin: IS_PROD ? false : (req, callback) => callback(null, true),
   credentials: true,
 }));
 

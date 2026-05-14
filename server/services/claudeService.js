@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 
-const MODEL = 'claude-sonnet-4-5';
+const MODEL = 'claude-sonnet-4-6';
 
 function getClient() {
   return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -274,6 +274,85 @@ Simulate every path, compare them, and provide actionable suggestions. Return ON
   const response = await getClient().messages.create({
     model: MODEL,
     max_tokens: 3000,
+    messages: [{ role: 'user', content: prompt }],
+  });
+
+  const text = response.content[0].text.trim();
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error('No JSON in response');
+  return JSON.parse(jsonMatch[0]);
+}
+
+export async function generateRetrospective({ goals, goalOutcomes, reflection, actualEvents, profile, plannedEvents, actualMood, actualEnergy }) {
+  const goalLines = goals.map(g => {
+    const outcome = goalOutcomes.find(o => o.goalId === g.id);
+    const status = outcome?.result || 'unknown';
+    return `- [${status.toUpperCase()}] ${g.emoji} ${g.text} (type: ${g.type})`;
+  }).join('\n');
+
+  const plannedList = plannedEvents?.length
+    ? plannedEvents.map(e => `  ${e.time}: ${e.label}`).join('\n')
+    : 'Not recorded';
+
+  const prompt = `You are a compassionate, insightful life coach helping someone reflect on their day.
+
+USER PROFILE:
+${JSON.stringify(profile, null, 2)}
+
+TODAY'S GOALS AND OUTCOMES:
+${goalLines}
+
+PLANNED EVENTS FOR TODAY:
+${plannedList}
+
+WHAT ACTUALLY HAPPENED (user's own words):
+${actualEvents || 'Not provided'}
+
+HOW THE DAY FELT (user's reflection):
+${reflection || 'Not provided'}
+
+ACTUAL END-OF-DAY MOOD: ${actualMood}/10
+ACTUAL END-OF-DAY ENERGY: ${actualEnergy}/10
+
+Provide warm, honest, non-judgmental coaching. Celebrate wins authentically. For misses, lead with compassion then offer ONE concrete, specific strategy (not generic advice). Return ONLY valid JSON:
+
+{
+  "headline": "A short, warm 4-6 word title capturing the essence of this retrospective",
+  "overallScore": <integer 1-10 based on goal outcomes>,
+  "wins": [
+    {
+      "text": "exact goal text that was achieved",
+      "emoji": "🏆",
+      "celebration": "2 warm sentences genuinely celebrating this win",
+      "impact": "1 sentence on how this habit compounds over time"
+    }
+  ],
+  "partials": [
+    {
+      "text": "exact goal text that was partial",
+      "emoji": "🌱",
+      "acknowledgment": "1-2 sentences acknowledging the effort and progress",
+      "nextStep": "One very specific, tiny action that turns this partial into a full win tomorrow"
+    }
+  ],
+  "misses": [
+    {
+      "text": "exact goal text that was missed",
+      "emoji": "💡",
+      "compassion": "1-2 non-judgmental sentences acknowledging the challenge",
+      "rootCause": "What likely made this hard today (be specific to their profile and day)",
+      "strategy": "One concrete, actionable strategy for tomorrow — specific, not generic"
+    }
+  ],
+  "patterns": "2-3 sentences about what today's outcomes reveal about the user's current habits and where their energy naturally flows",
+  "tomorrowPriority": "The single most important habit to focus on tomorrow and exactly why it will create momentum",
+  "thirtyDayOutlook": "2-3 sentences painting a vivid picture of who they become if they keep improving at this rate for 30 days",
+  "closingMessage": "2-3 warm, personalized, genuinely encouraging sentences to close — not generic, specific to their actual day"
+}`;
+
+  const response = await getClient().messages.create({
+    model: MODEL,
+    max_tokens: 4000,
     messages: [{ role: 'user', content: prompt }],
   });
 
