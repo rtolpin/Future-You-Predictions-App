@@ -86,7 +86,6 @@ export const decisionCards = [
   { id: 'food-lunch',        category: CARD_CATEGORIES.FOOD, icon: '🥗', label: 'Eat Lunch',                 description: 'Midday meal' },
   { id: 'food-dinner',       category: CARD_CATEGORIES.FOOD, icon: '🍜', label: 'Eat Dinner',                description: 'Evening meal' },
   { id: 'food-lunch-coffee',  category: CARD_CATEGORIES.FOOD, icon: '☕', label: 'Eat Lunch at Coffee Shop',  description: 'Lunch out with good vibes' },
-  { id: 'food-shabbat-dinner',category: CARD_CATEGORIES.FOOD, icon: '🕯️', label: 'Shabbat Dinner',             description: 'Candles, challah & family table' },
 
   // ── PERSONAL ROUTINE CARDS ──
   { id: 'per-wake-up',        category: CARD_CATEGORIES.PERSONAL, icon: '⏰', label: 'Wake Up',                 description: 'Start the day' },
@@ -117,7 +116,6 @@ export const decisionCards = [
   { id: 'per-morning-prayers', category: CARD_CATEGORIES.PERSONAL, icon: '🙏', label: 'Morning Prayers',          description: 'Start the day with faith' },
   { id: 'per-pray',            category: CARD_CATEGORIES.PERSONAL, icon: '⭐', label: 'Pray',                    description: 'Moment of prayer & reflection' },
   { id: 'per-prayer-service',  category: CARD_CATEGORIES.PERSONAL, icon: '⛪', label: 'Attend Prayer Service',    description: 'Communal worship' },
-  { id: 'per-shabbat-services',category: CARD_CATEGORIES.PERSONAL, icon: '✡️', label: 'Shabbat Services',         description: 'Friday night or Shabbat morning synagogue' },
 
   // ── TRANSPORTATION ──
   { id: 'tra-subway',       category: CARD_CATEGORIES.TRANSPORT, icon: '🚇', label: 'Take the Subway',           description: 'Underground city transit' },
@@ -151,8 +149,6 @@ export const decisionCards = [
   { id: 'stu-new-language',  category: CARD_CATEGORIES.STUDY, icon: '🗣️', label: 'Study New Language',          description: 'Immersive language learning' },
   { id: 'stu-duolingo',      category: CARD_CATEGORIES.STUDY, icon: '🦜', label: 'Use Duolingo App',            description: 'Daily language streak' },
   { id: 'stu-new-skill',       category: CARD_CATEGORIES.STUDY, icon: '🧠', label: 'Study a New Skill',           description: 'Expand your abilities' },
-  { id: 'stu-jewish-learning', category: CARD_CATEGORIES.STUDY, icon: '📜', label: 'Jewish Learning Class',        description: 'Torah, Talmud, or Jewish study' },
-  { id: 'stu-bible-study',     category: CARD_CATEGORIES.STUDY, icon: '✝️', label: 'Bible Study Class',             description: 'Scripture study & group discussion' },
 
   // ── CHORES & HOME TASKS ──
   { id: 'cho-garbage',      category: CARD_CATEGORIES.CHORES, icon: '🗑️', label: 'Take Out Garbage',          description: 'Bins out, fresh start' },
@@ -166,6 +162,7 @@ export const decisionCards = [
   { id: 'cho-fold',         category: CARD_CATEGORIES.CHORES, icon: '👚', label: 'Fold & Put Away Laundry',   description: 'Finish the laundry loop' },
   { id: 'cho-bedsheets',    category: CARD_CATEGORIES.CHORES, icon: '🛏️', label: 'Change Bed Sheets',         description: 'Fresh sheets day' },
   { id: 'cho-tidy',         category: CARD_CATEGORIES.CHORES, icon: '🧹', label: 'Tidy Up / Declutter',       description: 'Quick reset of the space' },
+  { id: 'cho-clean-home',   category: CARD_CATEGORIES.CHORES, icon: '🏠', label: 'Clean Home',                description: 'Full home clean top to bottom' },
   { id: 'cho-groceries',    category: CARD_CATEGORIES.CHORES, icon: '🛒', label: 'Grocery Shopping',          description: 'Stock up the fridge' },
   { id: 'cho-errands',      category: CARD_CATEGORIES.CHORES, icon: '📋', label: 'Run Errands',               description: 'Miscellaneous to-dos' },
   { id: 'cho-plants',       category: CARD_CATEGORIES.CHORES, icon: '🌿', label: 'Water the Plants',          description: 'Keep greenery alive' },
