@@ -576,7 +576,7 @@ export default function App() {
 
           {/* View tabs — desktop only; mobile uses bottom nav */}
           {!isMobile && (
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 shrink-0">
               {VIEW_CONFIG.map(({ id, icon, label, color, colorRgb }) => {
                 const active = view === id;
                 const isExplore = id !== VIEWS.SINGLE;
@@ -588,11 +588,11 @@ export default function App() {
                     whileTap={{ scale: 0.96 }}
                     className="relative flex items-center cursor-pointer"
                     style={{
-                      gap: 8, padding: '11px 20px', borderRadius: 14,
+                      gap: 7, padding: '9px 16px', borderRadius: 12,
                       border: isExplore && !active ? `1px solid rgba(${colorRgb},0.22)` : '1px solid transparent',
                       background: isExplore && !active ? `rgba(${colorRgb},0.06)` : 'transparent',
                       color: active ? color : isExplore ? color : '#94a3b8',
-                      fontFamily: 'Space Grotesk', fontSize: 15, fontWeight: 800,
+                      fontFamily: 'Space Grotesk', fontSize: 14, fontWeight: 800,
                     }}
                   >
                     {active && (
@@ -626,7 +626,7 @@ export default function App() {
           )}
 
           {/* Right side */}
-          <div className="flex items-center" style={{ gap: isMobile ? 8 : 12 }}>
+          <div className="flex items-center shrink-0" style={{ gap: isMobile ? 8 : 12 }}>
 
             {/* ── Action group: Goals + Retro + Summary + Save — hidden on mobile ── */}
             {!isMobile && <div
@@ -639,14 +639,14 @@ export default function App() {
                 whileTap={{ scale: 0.97 }}
                 className="flex items-center gap-2 rounded-xl font-bold transition-all cursor-pointer"
                 style={{
-                  padding: '9px 16px', fontSize: 13,
+                  padding: '7px 12px', fontSize: 12,
                   background: goals.length > 0 ? 'linear-gradient(135deg, rgba(0,212,177,0.22), rgba(0,212,177,0.1))' : 'rgba(0,212,177,0.1)',
                   color: '#00d4b1',
                   border: `1px solid ${goals.length > 0 ? 'rgba(0,212,177,0.45)' : 'rgba(0,212,177,0.25)'}`,
                   fontFamily: 'Space Grotesk',
                 }}
               >
-                <Target size={14} />
+                <Target size={12} />
                 Goals{goals.length > 0 ? ` (${goals.length})` : ''}
               </motion.button>
 
@@ -657,14 +657,14 @@ export default function App() {
                 whileTap={{ scale: 0.97 }}
                 className="flex items-center gap-2 rounded-xl font-bold transition-all cursor-pointer"
                 style={{
-                  padding: '9px 16px', fontSize: 13,
+                  padding: '7px 12px', fontSize: 12,
                   background: 'rgba(167,139,250,0.1)',
                   color: '#a78bfa',
                   border: '1px solid rgba(167,139,250,0.25)',
                   fontFamily: 'Space Grotesk',
                 }}
               >
-                <ClipboardList size={14} /> Retrospective
+                <ClipboardList size={12} /> Retrospective
               </motion.button>
 
               {/* Daily Summary */}
@@ -675,14 +675,14 @@ export default function App() {
                 whileTap={{ scale: 0.97 }}
                 className="flex items-center gap-2 rounded-xl font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                 style={{
-                  padding: '9px 16px', fontSize: 13,
+                  padding: '7px 12px', fontSize: 12,
                   background: 'linear-gradient(135deg, rgba(245,158,11,0.2), rgba(251,146,60,0.12))',
                   color: '#f59e0b',
                   border: '1px solid rgba(245,158,11,0.3)',
                   fontFamily: 'Space Grotesk',
                 }}
               >
-                <Sparkles size={14} /> Daily Summary
+                <Sparkles size={12} /> Daily Summary
               </motion.button>
 
               {/* Save Day */}
@@ -694,14 +694,14 @@ export default function App() {
                 whileTap={{ scale: 0.97 }}
                 className="flex items-center gap-2 rounded-xl font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                 style={{
-                  padding: '9px 16px', fontSize: 13,
+                  padding: '7px 12px', fontSize: 12,
                   background: saveStatus === 'saved' ? 'rgba(52,211,153,0.25)' : saveStatus === 'error' ? 'rgba(248,113,113,0.18)' : 'rgba(52,211,153,0.14)',
                   color: saveStatus === 'saved' ? '#34d399' : saveStatus === 'error' ? '#f87171' : '#34d399',
                   border: `1px solid ${saveStatus === 'saved' ? 'rgba(52,211,153,0.5)' : saveStatus === 'error' ? 'rgba(248,113,113,0.4)' : 'rgba(52,211,153,0.28)'}`,
                   fontFamily: 'Space Grotesk',
                 }}
               >
-                <Save size={14} />
+                <Save size={12} />
                 {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? '✓ Saved!' : saveStatus === 'error' ? 'Error' : 'Save Day'}
               </motion.button>
             </div>}
@@ -712,23 +712,17 @@ export default function App() {
                 onClick={() => setShowAuth(true)}
                 whileHover={{ scale: 1.04, borderColor: 'rgba(52,211,153,0.6)', color: '#6ee7b7', boxShadow: '0 0 14px rgba(52,211,153,0.25)' }}
                 whileTap={{ scale: 0.97 }}
-                className="cursor-pointer transition-all text-center"
                 style={{
-                  fontSize: 12,
-                  fontWeight: 800,
-                  color: '#34d399',
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  fontSize: 12, fontWeight: 800, color: '#34d399',
                   fontFamily: 'Space Grotesk',
                   background: 'rgba(52,211,153,0.1)',
                   border: '1.5px solid rgba(52,211,153,0.35)',
-                  borderRadius: 12,
-                  padding: '8px 14px',
-                  maxWidth: 130,
-                  lineHeight: 1.45,
-                  whiteSpace: 'normal',
-                  wordBreak: 'break-word',
+                  borderRadius: 10, padding: '7px 12px',
+                  whiteSpace: 'nowrap', cursor: 'pointer',
                 }}
               >
-                Sign In / Sign Up to Save Day
+                Sign In / Sign Up
               </motion.button>
             )}
 
@@ -739,16 +733,16 @@ export default function App() {
                 whileHover={{ scale: 1.04, boxShadow: '0 0 14px rgba(96,165,250,0.35)', borderColor: 'rgba(96,165,250,0.55)' }}
                 whileTap={{ scale: 0.96 }}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 7,
-                  padding: '9px 16px', borderRadius: 12, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '7px 12px', borderRadius: 10, cursor: 'pointer',
                   background: 'linear-gradient(135deg, rgba(96,165,250,0.18), rgba(59,130,246,0.1))',
                   color: '#60a5fa',
                   border: '1px solid rgba(96,165,250,0.35)',
-                  fontFamily: 'Space Grotesk', fontWeight: 800, fontSize: 13,
+                  fontFamily: 'Space Grotesk', fontWeight: 800, fontSize: 12,
                   boxShadow: '0 0 8px rgba(96,165,250,0.12)',
                 }}
               >
-                <CalendarDays size={14} /> History
+                <CalendarDays size={12} /> History
               </motion.button>
             )}
 
@@ -765,14 +759,14 @@ export default function App() {
                   title="Sign out"
                   style={{
                     display: 'flex', alignItems: 'center', gap: 6,
-                    padding: '7px 13px', borderRadius: 10, cursor: 'pointer', border: 'none',
+                    padding: '7px 12px', borderRadius: 10, cursor: 'pointer',
                     border: '1px solid rgba(248,113,113,0.25)',
                     background: 'rgba(248,113,113,0.08)',
                     color: '#f87171',
                     fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: 12,
                   }}
                 >
-                  <LogOut size={13} /> Log Out
+                  <LogOut size={12} /> Log Out
                 </motion.button>
               </div>
             )}
