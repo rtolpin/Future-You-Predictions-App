@@ -576,8 +576,8 @@ export default function App() {
 
           {/* View tabs — desktop only; mobile uses bottom nav */}
           {!isMobile && (
-            <div className="flex items-center gap-1" style={{ padding: '3px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 18 }}>
-              {VIEW_CONFIG.map(({ id, icon, label, description, color, colorRgb }) => {
+            <div className="flex items-center gap-1">
+              {VIEW_CONFIG.map(({ id, icon, label, color, colorRgb }) => {
                 const active = view === id;
                 const isExplore = id !== VIEWS.SINGLE;
                 return (
@@ -586,23 +586,21 @@ export default function App() {
                     onClick={() => setView(id)}
                     whileHover={!active ? { color } : {}}
                     whileTap={{ scale: 0.96 }}
-                    className="relative flex flex-col cursor-pointer"
+                    className="relative flex items-center cursor-pointer"
                     style={{
-                      alignItems: 'flex-start', gap: 2,
-                      padding: '10px 18px', borderRadius: 14, minWidth: 130,
-                      border: isExplore && !active ? `1px solid rgba(${colorRgb},0.18)` : '1px solid transparent',
-                      background: isExplore && !active ? `rgba(${colorRgb},0.05)` : 'transparent',
+                      gap: 8, padding: '11px 20px', borderRadius: 14,
+                      border: isExplore && !active ? `1px solid rgba(${colorRgb},0.22)` : '1px solid transparent',
+                      background: isExplore && !active ? `rgba(${colorRgb},0.06)` : 'transparent',
                       color: active ? color : isExplore ? color : '#94a3b8',
-                      fontFamily: 'Space Grotesk',
+                      fontFamily: 'Space Grotesk', fontSize: 15, fontWeight: 800,
                     }}
                   >
-                    {/* Spring-animated active background */}
                     {active && (
                       <motion.div
                         layoutId="view-tab-indicator"
                         className="absolute inset-0"
                         style={{
-                          borderRadius: 13,
+                          borderRadius: 11,
                           background: `linear-gradient(135deg, rgba(${colorRgb},0.22), rgba(${colorRgb},0.09))`,
                           border: `1.5px solid rgba(${colorRgb},0.45)`,
                           boxShadow: `0 0 18px rgba(${colorRgb},0.22)`,
@@ -610,21 +608,17 @@ export default function App() {
                         transition={{ type: 'spring', stiffness: 400, damping: 32, mass: 0.7 }}
                       />
                     )}
-                    <span className="relative flex items-center" style={{ gap: 7, fontSize: 13, fontWeight: 800, zIndex: 1 }}>
-                      <span style={{ opacity: active ? 1 : 0.8 }}>{icon}</span>
-                      {label}
-                      {isExplore && !active && (
-                        <span style={{
-                          fontSize: 9, fontWeight: 800, fontFamily: 'Space Grotesk',
-                          background: `rgba(${colorRgb},0.2)`, border: `1px solid rgba(${colorRgb},0.4)`,
-                          color, borderRadius: 20, padding: '2px 6px',
-                          letterSpacing: '0.06em', textTransform: 'uppercase',
-                        }}>✨ Explore</span>
-                      )}
-                    </span>
-                    <span className="relative" style={{ fontSize: 11, color: active ? `rgba(${colorRgb},0.7)` : '#475569', fontFamily: 'DM Sans', paddingLeft: 22, zIndex: 1 }}>
-                      {description}
-                    </span>
+                    <span style={{ opacity: active ? 1 : 0.8, position: 'relative', zIndex: 1 }}>{icon}</span>
+                    <span style={{ position: 'relative', zIndex: 1 }}>{label}</span>
+                    {isExplore && !active && (
+                      <span style={{
+                        fontSize: 9, fontWeight: 800, fontFamily: 'Space Grotesk',
+                        background: `rgba(${colorRgb},0.2)`, border: `1px solid rgba(${colorRgb},0.4)`,
+                        color, borderRadius: 20, padding: '2px 6px',
+                        letterSpacing: '0.06em', textTransform: 'uppercase',
+                        position: 'relative', zIndex: 1,
+                      }}>✨ Explore</span>
+                    )}
                   </motion.button>
                 );
               })}
@@ -636,8 +630,7 @@ export default function App() {
 
             {/* ── Action group: Goals + Retro + Summary + Save — hidden on mobile ── */}
             {!isMobile && <div
-              className="flex items-stretch gap-2 p-1.5 rounded-2xl"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+              className="flex items-stretch gap-2"
             >
               {/* Day Goals */}
               <motion.button
@@ -646,7 +639,7 @@ export default function App() {
                 whileTap={{ scale: 0.97 }}
                 className="flex items-center gap-2 rounded-xl font-bold transition-all cursor-pointer"
                 style={{
-                  padding: '9px 14px', fontSize: 13,
+                  padding: '9px 16px', fontSize: 13,
                   background: goals.length > 0 ? 'linear-gradient(135deg, rgba(0,212,177,0.22), rgba(0,212,177,0.1))' : 'rgba(0,212,177,0.1)',
                   color: '#00d4b1',
                   border: `1px solid ${goals.length > 0 ? 'rgba(0,212,177,0.45)' : 'rgba(0,212,177,0.25)'}`,
@@ -664,7 +657,7 @@ export default function App() {
                 whileTap={{ scale: 0.97 }}
                 className="flex items-center gap-2 rounded-xl font-bold transition-all cursor-pointer"
                 style={{
-                  padding: '9px 14px', fontSize: 13,
+                  padding: '9px 16px', fontSize: 13,
                   background: 'rgba(167,139,250,0.1)',
                   color: '#a78bfa',
                   border: '1px solid rgba(167,139,250,0.25)',
@@ -673,9 +666,6 @@ export default function App() {
               >
                 <ClipboardList size={14} /> Retrospective
               </motion.button>
-
-              {/* Divider */}
-              <div style={{ width: 1, background: 'rgba(255,255,255,0.08)', alignSelf: 'stretch', borderRadius: 2 }} />
 
               {/* Daily Summary */}
               <motion.button
@@ -694,9 +684,6 @@ export default function App() {
               >
                 <Sparkles size={14} /> Daily Summary
               </motion.button>
-
-              {/* Divider */}
-              <div style={{ width: 1, background: 'rgba(255,255,255,0.08)', alignSelf: 'stretch', borderRadius: 2 }} />
 
               {/* Save Day */}
               <motion.button
