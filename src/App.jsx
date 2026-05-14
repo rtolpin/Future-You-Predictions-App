@@ -630,7 +630,7 @@ export default function App() {
 
             {/* ── Action group: Goals + Retro + Summary + Save — hidden on mobile ── */}
             {!isMobile && <div
-              className="flex items-stretch gap-2"
+              className="flex items-center gap-2"
             >
               {/* Day Goals */}
               <motion.button
