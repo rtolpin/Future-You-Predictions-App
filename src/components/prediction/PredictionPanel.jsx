@@ -304,31 +304,36 @@ export function PredictionPanel({ prediction, dayPrediction, isLoading, selected
         </div>
       )}
 
-      {/* Daily Summary insights — shown when a summary has been generated */}
-      {summaryResult && <DailySummaryInsightsPanel result={summaryResult} onClear={onClearSummary} />}
+      {/* Scrollable body — insight panels + prediction content all scroll together */}
+      <div className="flex-1 overflow-y-auto flex flex-col">
 
-      {/* Retrospective insights — shown when a retro has been completed */}
-      {retroResult && <RetroInsightsPanel result={retroResult} onClear={onClearRetro} />}
+        {/* Daily Summary insights */}
+        {summaryResult && <DailySummaryInsightsPanel result={summaryResult} onClear={onClearSummary} />}
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto">
-        <AnimatePresence mode="wait">
-          {isLoading && (
-            <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full">
-              <LoadingOrbs />
-            </motion.div>
-          )}
-          {!isLoading && dayPrediction && (
-            <motion.div key="day" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full">
-              <DayPredictionSidebar prediction={dayPrediction} onExpand={onToggleFullscreen} />
-            </motion.div>
-          )}
-          {!isLoading && !dayPrediction && !summaryResult && !retroResult && (
-            <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full">
-              <EmptyState />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Retrospective insights */}
+        {retroResult && <RetroInsightsPanel result={retroResult} onClear={onClearRetro} />}
+
+        {/* Prediction content */}
+        <div className="flex-1">
+          <AnimatePresence mode="wait">
+            {isLoading && (
+              <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full">
+                <LoadingOrbs />
+              </motion.div>
+            )}
+            {!isLoading && dayPrediction && (
+              <motion.div key="day" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <DayPredictionSidebar prediction={dayPrediction} onExpand={onToggleFullscreen} />
+              </motion.div>
+            )}
+            {!isLoading && !dayPrediction && !summaryResult && !retroResult && (
+              <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full">
+                <EmptyState />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
       </div>
     </div>
   );
