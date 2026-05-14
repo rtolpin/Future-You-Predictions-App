@@ -939,35 +939,60 @@ export default function App() {
                       </div>
                     </>
                   ) : (
-                    /* Collapsed rail */
-                    <div className="flex flex-col items-center h-full" style={{ width: 40, paddingTop: 12, gap: 0 }}>
-                      <button
-                        onClick={() => setPredictionOpen(true)}
-                        title="Expand panel"
-                        style={{ background: 'rgba(0,212,177,0.1)', border: '1px solid rgba(0,212,177,0.25)', borderRadius: 6, padding: '6px 7px', cursor: 'pointer', color: '#00d4b1', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}
-                      >
-                        <ChevronLeft size={13} />
-                      </button>
-                      <div
-                        onClick={() => { setPredictionOpen(true); setRightPanelTab('predictions'); }}
-                        style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(0,212,177,0.35)', userSelect: 'none', marginTop: 4, cursor: 'pointer' }}
-                      >
-                        AI Prediction
+                    /* Collapsed rail — entire strip is one big click target */
+                    <motion.button
+                      onClick={() => setPredictionOpen(true)}
+                      title="Expand panel"
+                      whileHover={{ background: 'rgba(0,212,177,0.08)' }}
+                      whileTap={{ scale: 0.97 }}
+                      style={{
+                        width: 40, height: '100%', cursor: 'pointer', border: 'none',
+                        background: 'transparent',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center',
+                        paddingTop: 14, gap: 12,
+                        borderLeft: '2px solid rgba(0,212,177,0.15)',
+                        transition: 'background 0.15s, border-color 0.15s',
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.borderLeftColor = 'rgba(0,212,177,0.45)'}
+                      onMouseLeave={e => e.currentTarget.style.borderLeftColor = 'rgba(0,212,177,0.15)'}
+                    >
+                      {/* Arrow */}
+                      <div style={{
+                        width: 28, height: 28, borderRadius: 8,
+                        background: 'rgba(0,212,177,0.12)',
+                        border: '1.5px solid rgba(0,212,177,0.35)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: '#00d4b1', flexShrink: 0,
+                      }}>
+                        <ChevronLeft size={15} />
                       </div>
-                      <Sparkles size={13} style={{ color: 'rgba(0,212,177,0.2)', marginTop: 10 }} />
+
+                      {/* AI Predictions label */}
+                      <div style={{
+                        writingMode: 'vertical-rl', transform: 'rotate(180deg)',
+                        fontSize: 11, fontWeight: 800, letterSpacing: '0.1em',
+                        textTransform: 'uppercase', color: 'rgba(0,212,177,0.6)',
+                        fontFamily: 'Space Grotesk', userSelect: 'none',
+                      }}>
+                        AI Predictions
+                      </div>
+                      <Sparkles size={14} color="rgba(0,212,177,0.4)" />
+
                       {goals.length > 0 && (
                         <>
-                          <div style={{ height: 1, width: 20, background: 'rgba(255,255,255,0.08)', margin: '10px 0' }} />
-                          <div
-                            onClick={() => { setPredictionOpen(true); setRightPanelTab('goals'); }}
-                            style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(52,211,153,0.4)', userSelect: 'none', cursor: 'pointer' }}
-                          >
+                          <div style={{ height: 1, width: 20, background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
+                          <div style={{
+                            writingMode: 'vertical-rl', transform: 'rotate(180deg)',
+                            fontSize: 11, fontWeight: 800, letterSpacing: '0.1em',
+                            textTransform: 'uppercase', color: 'rgba(167,139,250,0.6)',
+                            fontFamily: 'Space Grotesk', userSelect: 'none',
+                          }}>
                             Goals
                           </div>
-                          <Target size={13} style={{ color: 'rgba(52,211,153,0.25)', marginTop: 8 }} />
+                          <Target size={14} color="rgba(167,139,250,0.4)" />
                         </>
                       )}
-                    </div>
+                    </motion.button>
                   )}
                 </motion.div>
               )}
