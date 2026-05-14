@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { GitBranch, Layers, LayoutDashboard, Sparkles, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Settings2, Minimize2, X, Save, CalendarDays, LogOut, UserCircle, Menu, Zap, Target, ClipboardList, Check } from 'lucide-react';
+import { GitBranch, Layers, LayoutDashboard, Sparkles, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Settings2, Minimize2, X, Save, CalendarDays, LogOut, UserCircle, Menu, Zap, Target, ClipboardList, Check, GripVertical } from 'lucide-react';
 import { useIsMobile } from './hooks/useIsMobile.js';
 
 import { OnboardingForm } from './components/onboarding/OnboardingForm.jsx';
@@ -827,34 +827,61 @@ export default function App() {
                 <motion.div
                   animate={{ width: predictionOpen ? predictionWidth : 40 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                  className="shrink-0 flex flex-col overflow-hidden relative"
-                  style={{ borderLeft: '1px solid rgba(255,255,255,0.06)', background: '#09090f', minWidth: 0 }}
+                  className="shrink-0 flex flex-col relative"
+                  style={{ borderLeft: '1px solid rgba(255,255,255,0.06)', background: '#09090f', minWidth: 0, zIndex: 10, overflow: 'visible' }}
                 >
                   {predictionOpen ? (
                     <>
                       {/* Drag-to-resize handle */}
+                      {/* Drag-to-resize handle — straddles the panel's left border */}
                       <div
                         onMouseDown={handlePredictionResizeStart}
-                        style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 6, cursor: 'col-resize', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        style={{ position: 'absolute', left: -12, top: 0, bottom: 0, width: 24, cursor: 'col-resize', zIndex: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        onMouseEnter={e => {
+                          e.currentTarget.querySelector('.resize-line').style.background = '#00d4b1';
+                          e.currentTarget.querySelector('.resize-line').style.boxShadow = '0 0 8px rgba(0,212,177,0.6)';
+                          e.currentTarget.querySelector('.resize-arrows').style.borderColor = 'rgba(0,212,177,0.7)';
+                          e.currentTarget.querySelector('.resize-arrows').style.boxShadow = '0 0 12px rgba(0,212,177,0.4)';
+                        }}
+                        onMouseLeave={e => {
+                          e.currentTarget.querySelector('.resize-line').style.background = 'rgba(255,255,255,0.15)';
+                          e.currentTarget.querySelector('.resize-line').style.boxShadow = 'none';
+                          e.currentTarget.querySelector('.resize-arrows').style.borderColor = 'rgba(0,212,177,0.35)';
+                          e.currentTarget.querySelector('.resize-arrows').style.boxShadow = '0 0 6px rgba(0,212,177,0.12)';
+                        }}
                       >
-                        <div style={{ width: 2, height: 40, borderRadius: 2, background: 'rgba(255,255,255,0.08)', transition: 'background 0.2s' }}
-                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,212,177,0.5)'}
-                          onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
-                        />
+                        {/* Line sitting exactly on the border */}
+                        <div className="resize-line" style={{ width: 2, height: '100%', background: 'rgba(255,255,255,0.15)', borderRadius: 2, transition: 'all 0.15s' }} />
+                        {/* ‹ › pill centered on the border */}
+                        <div className="resize-arrows" style={{
+                          position: 'absolute', top: '50%', left: '50%',
+                          transform: 'translate(-50%, -50%)',
+                          display: 'flex', alignItems: 'center', gap: 1,
+                          background: 'rgba(9,9,15,0.95)',
+                          border: '1px solid rgba(0,212,177,0.35)',
+                          borderRadius: 8, padding: '5px 6px',
+                          color: '#00d4b1', fontSize: 12, fontWeight: 900,
+                          opacity: 1, transition: 'all 0.15s',
+                          userSelect: 'none', pointerEvents: 'none',
+                          whiteSpace: 'nowrap', lineHeight: 1,
+                          boxShadow: '0 0 8px rgba(0,212,177,0.12)',
+                        }}>
+                          ‹ ›
+                        </div>
                       </div>
 
                       {/* ── Tab bar ── */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 12px 10px 12px', flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(0,0,0,0.2)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 12px 10px 12px', flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(0,0,0,0.2)', overflow: 'hidden' }}>
 
                         {/* Collapse button — LEFT */}
                         <motion.button
                           onClick={() => setPredictionOpen(false)}
                           title="Collapse panel"
-                          whileHover={{ scale: 1.08, background: 'rgba(255,255,255,0.12)', color: '#e2e8f0' }}
+                          whileHover={{ scale: 1.08, background: 'rgba(255,255,255,0.14)', color: '#e2e8f0', borderColor: 'rgba(255,255,255,0.3)' }}
                           whileTap={{ scale: 0.92 }}
-                          style={{ width: 34, height: 34, borderRadius: 8, background: 'rgba(255,255,255,0.07)', border: '1.5px solid rgba(255,255,255,0.15)', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s' }}
+                          style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(255,255,255,0.07)', border: '1.5px solid rgba(255,255,255,0.18)', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s' }}
                         >
-                          <ChevronRight size={15} />
+                          <ChevronsRight size={13} />
                         </motion.button>
 
                         {/* AI Predictions tab */}
@@ -956,15 +983,16 @@ export default function App() {
                       onMouseEnter={e => e.currentTarget.style.borderLeftColor = 'rgba(0,212,177,0.45)'}
                       onMouseLeave={e => e.currentTarget.style.borderLeftColor = 'rgba(0,212,177,0.15)'}
                     >
-                      {/* Arrow */}
+                      {/* Expand arrow */}
                       <div style={{
-                        width: 28, height: 28, borderRadius: 8,
-                        background: 'rgba(0,212,177,0.12)',
-                        border: '1.5px solid rgba(0,212,177,0.35)',
+                        width: 32, height: 32, borderRadius: 10,
+                        background: 'rgba(0,212,177,0.14)',
+                        border: '1.5px solid rgba(0,212,177,0.45)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         color: '#00d4b1', flexShrink: 0,
+                        boxShadow: '0 0 10px rgba(0,212,177,0.15)',
                       }}>
-                        <ChevronLeft size={15} />
+                        <ChevronsLeft size={16} />
                       </div>
 
                       {/* AI Predictions label */}
