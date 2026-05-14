@@ -478,21 +478,42 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
             <div className="flex items-center" style={{ gap: 8, flexWrap: 'wrap' }}>
               {/* AM/PM ↔ 24h toggle — hidden in compact mode */}
               {!compact && (
-                <motion.button
-                  onClick={() => setUse24(u => !u)}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                <div
                   title="Switch time format"
-                  className="flex items-center cursor-pointer font-bold transition-all"
                   style={{
-                    gap: 0, padding: '5px 0', borderRadius: 10, overflow: 'hidden',
-                    border: '1px solid rgba(167,139,250,0.3)',
-                    fontSize: 11, fontFamily: 'JetBrains Mono',
+                    display: 'flex', alignItems: 'center',
+                    borderRadius: 12,
+                    border: '1px solid rgba(167,139,250,0.35)',
+                    background: 'rgba(167,139,250,0.06)',
+                    padding: 4, gap: 3,
+                    boxShadow: '0 0 10px rgba(167,139,250,0.08)',
                   }}
                 >
-                  <span style={{ padding: '4px 9px', background: !use24 ? 'rgba(167,139,250,0.25)' : 'rgba(255,255,255,0.04)', color: !use24 ? '#a78bfa' : '#475569', fontWeight: !use24 ? 800 : 500 }}>AM/PM</span>
-                  <span style={{ padding: '4px 9px', background: use24 ? 'rgba(167,139,250,0.25)' : 'rgba(255,255,255,0.04)', color: use24 ? '#a78bfa' : '#475569', fontWeight: use24 ? 800 : 500 }}>24h</span>
-                </motion.button>
+                  {[{ label: 'AM/PM', val: false }, { label: '24h', val: true }].map(({ label, val }) => {
+                    const active = use24 === val;
+                    return (
+                      <motion.button
+                        key={label}
+                        onClick={() => setUse24(val)}
+                        whileHover={!active ? { background: 'rgba(167,139,250,0.15)', color: '#c4b5fd', scale: 1.04 } : {}}
+                        whileTap={{ scale: 0.95 }}
+                        style={{
+                          padding: '7px 14px', borderRadius: 9, cursor: 'pointer', border: 'none',
+                          fontSize: 12, fontFamily: 'JetBrains Mono', fontWeight: 800,
+                          background: active
+                            ? 'linear-gradient(135deg, rgba(167,139,250,0.35), rgba(139,92,246,0.25))'
+                            : 'transparent',
+                          color: active ? '#c4b5fd' : '#64748b',
+                          boxShadow: active ? '0 0 14px rgba(167,139,250,0.35), inset 0 1px 0 rgba(255,255,255,0.08)' : 'none',
+                          border: active ? '1px solid rgba(167,139,250,0.4)' : '1px solid transparent',
+                          transition: 'all 0.15s',
+                        }}
+                      >
+                        {label}
+                      </motion.button>
+                    );
+                  })}
+                </div>
               )}
 
               {/* Fullscreen toggle — hidden in compact mode */}

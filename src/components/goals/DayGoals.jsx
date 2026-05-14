@@ -473,13 +473,20 @@ export function DayGoals({ isOpen, onClose, goals, onGoalsChange }) {
                     return (
                       <motion.button key={t.id} onClick={() => setTemplateTab(t.id)}
                         whileTap={{ scale: 0.96 }}
+                        whileHover={!active ? { boxShadow: `0 0 14px rgba(${t.rgb},0.25)`, borderColor: `rgba(${t.rgb},0.4)` } : {}}
                         style={{
                           flex: 1, padding: '12px 20px', borderRadius: 14, cursor: 'pointer',
                           fontSize: 14, fontWeight: 800, fontFamily: 'Space Grotesk',
-                          background: active ? `rgba(${t.rgb},0.14)` : 'rgba(255,255,255,0.04)',
-                          border: `2px solid ${active ? `rgba(${t.rgb},0.45)` : 'rgba(255,255,255,0.08)'}`,
-                          color: active ? t.color : '#475569',
-                          boxShadow: active ? `0 0 18px rgba(${t.rgb},0.2)` : 'none',
+                          background: active
+                            ? `rgba(${t.rgb},0.18)`
+                            : t.id === 'break' ? 'rgba(248,113,113,0.07)' : 'rgba(255,255,255,0.04)',
+                          border: `2px solid ${active
+                            ? `rgba(${t.rgb},0.55)`
+                            : t.id === 'break' ? 'rgba(248,113,113,0.3)' : 'rgba(255,255,255,0.08)'}`,
+                          color: active ? t.color : t.id === 'break' ? '#f87171' : '#475569',
+                          boxShadow: active
+                            ? `0 0 20px rgba(${t.rgb},0.25)`
+                            : t.id === 'break' ? '0 0 10px rgba(248,113,113,0.1)' : 'none',
                           transition: 'all 0.18s',
                         }}>
                         {t.label}

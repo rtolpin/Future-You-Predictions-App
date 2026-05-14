@@ -749,26 +749,43 @@ export default function App() {
             {account && !isMobile && (
               <motion.button
                 onClick={() => setShowHistory(true)}
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer"
-                style={{ background: 'rgba(96,165,250,0.1)', color: '#60a5fa', border: '1px solid rgba(96,165,250,0.2)' }}
+                whileHover={{ scale: 1.04, boxShadow: '0 0 14px rgba(96,165,250,0.35)', borderColor: 'rgba(96,165,250,0.55)' }}
+                whileTap={{ scale: 0.96 }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 7,
+                  padding: '9px 16px', borderRadius: 12, cursor: 'pointer',
+                  background: 'linear-gradient(135deg, rgba(96,165,250,0.18), rgba(59,130,246,0.1))',
+                  color: '#60a5fa',
+                  border: '1px solid rgba(96,165,250,0.35)',
+                  fontFamily: 'Space Grotesk', fontWeight: 800, fontSize: 13,
+                  boxShadow: '0 0 8px rgba(96,165,250,0.12)',
+                }}
               >
-                <CalendarDays size={12} /> History
+                <CalendarDays size={14} /> History
               </motion.button>
             )}
 
             {/* Account — desktop only */}
             {account && !isMobile && (
               <div className="flex items-center gap-2">
-                <div style={{ fontSize: 11, color: '#64748b', fontFamily: 'Space Grotesk', maxWidth: 80, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div style={{ fontSize: 11, color: '#64748b', fontFamily: 'Space Grotesk' }}>
                   {account.name || account.email}
                 </div>
-                <motion.button onClick={handleLogout} whileHover={{ scale: 1.05, color: '#f87171' }} whileTap={{ scale: 0.95 }}
+                <motion.button
+                  onClick={handleLogout}
+                  whileHover={{ scale: 1.04, boxShadow: '0 0 12px rgba(248,113,113,0.3)', borderColor: 'rgba(248,113,113,0.5)', color: '#f87171', background: 'rgba(248,113,113,0.12)' }}
+                  whileTap={{ scale: 0.96 }}
                   title="Sign out"
-                  className="flex items-center justify-center cursor-pointer transition-colors"
-                  style={{ width: 30, height: 30, borderRadius: 8, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: '#475569' }}>
-                  <LogOut size={13} />
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '7px 13px', borderRadius: 10, cursor: 'pointer', border: 'none',
+                    border: '1px solid rgba(248,113,113,0.25)',
+                    background: 'rgba(248,113,113,0.08)',
+                    color: '#f87171',
+                    fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: 12,
+                  }}
+                >
+                  <LogOut size={13} /> Log Out
                 </motion.button>
               </div>
             )}
