@@ -1,6 +1,6 @@
 import { useRef, useCallback, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Clock, ChevronsUpDown, Pencil, Check } from 'lucide-react';
+import { Trash2, Clock, ChevronsUpDown, Pencil, Check } from 'lucide-react';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { CATEGORY_META } from '../../data/decisionCards.js';
@@ -256,33 +256,25 @@ export function EventBlock({ event, onRemove, onClick, onUpdateDuration, onUpdat
         )}
       </div>
 
-      {/* Remove button — needs explicit pointer-events since content layer is none */}
-      {(() => {
-        const btnColor = darkenHex(color, 50);
-        const btnColorHover = darkenHex(color, 30);
-        return (
-          <motion.button
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={(e) => { e.stopPropagation(); onRemove?.(event.id); }}
-            whileHover={{ background: btnColorHover, scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            title="Remove event"
-            style={{
-              position: 'absolute', top: 5, right: 5,
-              width: 18, height: 18, borderRadius: 5,
-              background: btnColor,
-              border: `1px solid rgba(${rgb},0.5)`,
-              cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#fff',
-              zIndex: 10,
-              pointerEvents: 'auto',
-            }}
-          >
-            <X size={11} strokeWidth={3} color="#000" />
-          </motion.button>
-        );
-      })()}
+      {/* Delete button */}
+      <motion.button
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => { e.stopPropagation(); onRemove?.(event.id); }}
+        whileHover={{ scale: 1.15, background: 'rgba(248,113,113,0.95)', boxShadow: '0 0 10px rgba(248,113,113,0.6)' }}
+        whileTap={{ scale: 0.9 }}
+        title="Delete event"
+        style={{
+          position: 'absolute', top: 5, right: 5,
+          width: 22, height: 22, borderRadius: 7,
+          background: 'rgba(248,113,113,0.75)',
+          border: '1px solid rgba(248,113,113,0.6)',
+          cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 10, pointerEvents: 'auto',
+        }}
+      >
+        <Trash2 size={12} color="#fff" strokeWidth={2.5} />
+      </motion.button>
 
       {/* Resize handle — stopPropagation on pointer so dnd-kit never sees it */}
       <div

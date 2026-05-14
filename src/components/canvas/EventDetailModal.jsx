@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, MapPin, AlignLeft, Clock, Save, Sun, Check } from 'lucide-react';
+import { X, MapPin, AlignLeft, Clock, Save, Sun, Check, Trash2 } from 'lucide-react';
 import { CATEGORY_META } from '../../data/decisionCards.js';
 import { minutesToLabel } from '../../hooks/useTimeline.js';
 
@@ -133,7 +133,7 @@ function TimePicker({ label, totalMinutes, onChange, color, rgb, use24 }) {
   );
 }
 
-export function EventDetailModal({ event, onSave, onClose }) {
+export function EventDetailModal({ event, onSave, onClose, onRemove }) {
   // State must be declared before any derived values that reference them
   const [label,       setLabel]       = useState(event.card.label);
   const [description, setDescription] = useState(event.description || '');
@@ -409,31 +409,49 @@ export function EventDetailModal({ event, onSave, onClose }) {
         </div>
 
         {/* Footer */}
-        <div style={{ display: 'flex', gap: 12, padding: '16px 32px 24px', borderTop: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
-          <button
-            onClick={onClose}
-            style={{ flex: 1, padding: '13px', borderRadius: 14, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', color: '#64748b', fontFamily: 'DM Sans', fontSize: 14, cursor: 'pointer' }}
-            onMouseEnter={e => e.target.style.background = 'rgba(255,255,255,0.08)'}
-            onMouseLeave={e => e.target.style.background = 'rgba(255,255,255,0.04)'}
-          >
-            Cancel
-          </button>
-          <motion.button
-            onClick={handleSave}
-            disabled={!allDay && endBeforeStart}
-            whileHover={{ scale: 1.02, boxShadow: `0 0 24px rgba(${rgb},0.45)` }}
-            whileTap={{ scale: 0.97 }}
-            style={{
-              flex: 2, padding: '13px', borderRadius: 14, border: 'none', cursor: 'pointer',
-              background: `linear-gradient(135deg, ${color}, ${color}cc)`,
-              boxShadow: `0 0 16px rgba(${rgb},0.3)`,
-              color: '#000', fontFamily: 'Space Grotesk', fontSize: 14, fontWeight: 800,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              opacity: (!allDay && endBeforeStart) ? 0.4 : 1,
-            }}
-          >
-            <Save size={15} /> Save Event
-          </motion.button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '16px 32px 24px', borderTop: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <button
+              onClick={onClose}
+              style={{ flex: 1, padding: '13px', borderRadius: 14, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', color: '#64748b', fontFamily: 'DM Sans', fontSize: 14, cursor: 'pointer' }}
+              onMouseEnter={e => e.target.style.background = 'rgba(255,255,255,0.08)'}
+              onMouseLeave={e => e.target.style.background = 'rgba(255,255,255,0.04)'}
+            >
+              Cancel
+            </button>
+            <motion.button
+              onClick={handleSave}
+              disabled={!allDay && endBeforeStart}
+              whileHover={{ scale: 1.02, boxShadow: `0 0 24px rgba(${rgb},0.45)` }}
+              whileTap={{ scale: 0.97 }}
+              style={{
+                flex: 2, padding: '13px', borderRadius: 14, border: 'none', cursor: 'pointer',
+                background: `linear-gradient(135deg, ${color}, ${color}cc)`,
+                boxShadow: `0 0 16px rgba(${rgb},0.3)`,
+                color: '#000', fontFamily: 'Space Grotesk', fontSize: 14, fontWeight: 800,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                opacity: (!allDay && endBeforeStart) ? 0.4 : 1,
+              }}
+            >
+              <Save size={15} /> Save Event
+            </motion.button>
+          </div>
+          {onRemove && (
+            <motion.button
+              onClick={() => { onRemove(event.id); onClose(); }}
+              whileHover={{ scale: 1.01, background: 'rgba(248,113,113,0.18)', boxShadow: '0 0 14px rgba(248,113,113,0.25)' }}
+              whileTap={{ scale: 0.97 }}
+              style={{
+                width: '100%', padding: '11px', borderRadius: 14, cursor: 'pointer',
+                background: 'rgba(248,113,113,0.08)',
+                border: '1px solid rgba(248,113,113,0.3)',
+                color: '#f87171', fontFamily: 'Space Grotesk', fontSize: 14, fontWeight: 700,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              }}
+            >
+              <Trash2 size={15} /> Delete Event
+            </motion.button>
+          )}
         </div>
       </motion.div>
     </motion.div>

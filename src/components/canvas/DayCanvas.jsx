@@ -870,6 +870,7 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
           event={editingEvent}
           onClose={() => setEditingEvent(null)}
           onSave={(eventId, details) => timeline.updateDetails(eventId, details)}
+          onRemove={(eventId) => { timeline.removeEvent(eventId); setEditingEvent(null); }}
         />
       )}
     </AnimatePresence>
