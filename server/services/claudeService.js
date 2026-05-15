@@ -115,9 +115,12 @@ ${eventList}
 User Profile:
 - City: ${profile?.city || 'New York'}
 - Age: ${profile?.age || 'unknown'}
+- Age Range: ${profile?.ageRange || 'unspecified'}
+- Employment: ${profile?.employment || 'unspecified'}
+- Gender Identity: ${profile?.genderIdentity || 'unspecified'}
+- Appearance: ${profile?.appearance || 'unspecified'}
 - Starting Mood: ${mood || profile?.mood || 'neutral'}
 - Outfit(s): ${outfits?.length ? outfits.join(', ') : 'unspecified'}
-- Other details: ${JSON.stringify(profile || {})}
 - Date: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
 
 Create a vivid, holistic day simulation. Each activity must be understood in context of the FULL day — how it connects to what came before and after. Be specific to their city, time of day, and personal profile. Return ONLY valid JSON in this exact format:
@@ -167,6 +170,10 @@ export async function compareDays({ pathA, pathB, profile, mood, outfits }) {
 USER PROFILE:
 - City: ${profile?.city || 'New York'}
 - Age: ${profile?.age || 'unspecified'}
+- Age Range: ${profile?.ageRange || 'unspecified'}
+- Employment: ${profile?.employment || 'unspecified'}
+- Gender Identity: ${profile?.genderIdentity || 'unspecified'}
+- Appearance: ${profile?.appearance || 'unspecified'}
 - Starting Mood: ${mood || 'neutral'}
 - Outfit(s): ${outfits?.length ? outfits.join(', ') : 'unspecified'}
 - Date: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
@@ -239,6 +246,10 @@ export async function simulateDecisionTree({ paths, nodeLabels, profile, mood, o
 USER PROFILE:
 - City: ${profile?.city || 'New York'}
 - Age: ${profile?.age || 'unspecified'}
+- Age Range: ${profile?.ageRange || 'unspecified'}
+- Employment: ${profile?.employment || 'unspecified'}
+- Gender Identity: ${profile?.genderIdentity || 'unspecified'}
+- Appearance: ${profile?.appearance || 'unspecified'}
 - Starting Mood: ${mood || 'neutral'}
 - Outfit(s): ${outfits?.length ? outfits.join(', ') : 'unspecified'}
 - Date: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}

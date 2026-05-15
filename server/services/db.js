@@ -44,4 +44,7 @@ db.exec(`
   );
 `);
 
+// Add profile column to users if it doesn't exist yet
+try { db.exec(`ALTER TABLE users ADD COLUMN profile TEXT`); } catch {}
+
 export default db;

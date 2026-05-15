@@ -25,6 +25,11 @@ export const authClient = {
   resetPassword: (email, token, newPassword) => req('POST', '/auth/reset-password',  { email, token, newPassword }),
 };
 
+export const profileClient = {
+  load: ()        => req('GET', '/profile'),
+  save: (profile) => req('PUT', '/profile', { profile }),
+};
+
 export const daysClient = {
   list:   ()        => req('GET',    '/days'),
   get:    (id)      => req('GET',    `/days/${id}`),

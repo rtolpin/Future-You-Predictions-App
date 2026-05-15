@@ -13,6 +13,7 @@ import { AppearanceSelector } from './components/canvas/AppearanceSelector.jsx';
 import { BranchTreeView } from './components/tree/BranchTreeView.jsx';
 import { IdentityPanel } from './components/profile/IdentityPanel.jsx';
 import { ProfileAvatar } from './components/profile/ProfileAvatar.jsx';
+import { UserProfilePage } from './components/profile/UserProfilePage.jsx';
 import { DailySummary } from './components/summary/DailySummary.jsx';
 import { AuthModal } from './components/account/AuthModal.jsx';
 import { HistoryCalendar } from './components/account/HistoryCalendar.jsx';
@@ -20,7 +21,7 @@ import { DayGoals } from './components/goals/DayGoals.jsx';
 import { DayRetrospective } from './components/goals/DayRetrospective.jsx';
 import { useTimeline, minutesToLabel } from './hooks/useTimeline.js';
 import { simulateDecision, simulateDayFlow } from './utils/claudeClient.js';
-import { authClient, daysClient } from './utils/accountClient.js';
+import { authClient, daysClient, profileClient } from './utils/accountClient.js';
 import { SimulationLoadingScreen } from './components/simulation/SimulationLoadingScreen.jsx';
 import { TransitionScreen } from './components/simulation/TransitionScreen.jsx';
 
@@ -357,6 +358,7 @@ export default function App() {
   });
   const [showAuth, setShowAuth] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const [checkedGoals, setCheckedGoals] = useState(() => {
     try {
       const acct = JSON.parse(localStorage.getItem('future-you-account'));
@@ -398,10 +400,18 @@ export default function App() {
 
   const timeline = useTimeline();
 
-  const handleAccountLogin = useCallback((user) => {
+  const handleAccountLogin = useCallback(async (user) => {
     localStorage.setItem('future-you-account', JSON.stringify(user));
     setAccount(user);
     setShowAuth(false);
+    // Load saved profile from backend and apply it if present
+    try {
+      const { profile: savedProfile } = await profileClient.load();
+      if (savedProfile) {
+        localStorage.setItem('future-you-profile', JSON.stringify(savedProfile));
+        setProfile(savedProfile);
+      }
+    } catch { /* silently ignore — localStorage profile stays */ }
   }, []);
 
   const handleLogout = useCallback(() => {
@@ -483,12 +493,14 @@ export default function App() {
   const handleProfileComplete = useCallback((p) => {
     localStorage.setItem('future-you-profile', JSON.stringify(p));
     setProfile(p);
-  }, []);
+    if (account) profileClient.save(p).catch(() => {});
+  }, [account]);
 
   const handleProfileUpdate = useCallback((p) => {
     localStorage.setItem('future-you-profile', JSON.stringify(p));
     setProfile(p);
-  }, []);
+    if (account) profileClient.save(p).catch(() => {}); // sync to backend silently
+  }, [account]);
 
   const handleSimulate = useCallback(async ({ eventId, timeKey, label, action, appearance, previousChoices }) => {
     const key = eventId || timeKey;
@@ -657,11 +669,12 @@ export default function App() {
           )}
 
           {/* Right side */}
-          <div className="flex items-center shrink-0" style={{ gap: isMobile ? 8 : 12 }}>
+          <div className="flex items-center" style={{ gap: isMobile ? 8 : 10, flexShrink: 1, minWidth: 0, overflow: 'hidden' }}>
 
             {/* ── Action group: Goals + Retro + Summary + Save — hidden on mobile ── */}
             {!isMobile && <div
               className="flex items-center gap-2"
+              style={{ flexShrink: 1, minWidth: 0 }}
             >
               {/* Day Goals */}
               <motion.button
@@ -780,9 +793,6 @@ export default function App() {
             {/* Account — desktop only */}
             {account && !isMobile && (
               <div className="flex items-center gap-2">
-                <div style={{ fontSize: 10, color: '#64748b', fontFamily: 'Space Grotesk', maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {account.name || account.email}
-                </div>
                 <motion.button
                   onClick={handleLogout}
                   whileHover={{ scale: 1.04, boxShadow: '0 0 10px rgba(248,113,113,0.3)', borderColor: 'rgba(248,113,113,0.5)', color: '#f87171', background: 'rgba(248,113,113,0.12)' }}
@@ -818,8 +828,8 @@ export default function App() {
 
             {/* Profile */}
             <motion.button
-              onClick={() => setShowIdentity(true)}
-              whileHover={{ scale: 1.03 }}
+              onClick={() => setShowProfile(true)}
+              whileHover={{ scale: 1.03, borderColor: 'rgba(0,212,177,0.35)', boxShadow: '0 0 12px rgba(0,212,177,0.15)' }}
               whileTap={{ scale: 0.97 }}
               className="flex items-center gap-2 px-3.5 py-2 rounded-xl transition-all cursor-pointer"
               style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
@@ -1142,6 +1152,19 @@ export default function App() {
       )}
 
       {/* Modals */}
+      <AnimatePresence>
+        {showProfile && (
+          <UserProfilePage
+            profile={profile}
+            account={account}
+            goals={goals}
+            onClose={() => setShowProfile(false)}
+            onEditProfile={() => { setShowProfile(false); setShowIdentity(true); }}
+            onLogout={() => { setShowProfile(false); handleLogout(); }}
+          />
+        )}
+      </AnimatePresence>
+
       <IdentityPanel
         isOpen={showIdentity}
         onClose={() => setShowIdentity(false)}
