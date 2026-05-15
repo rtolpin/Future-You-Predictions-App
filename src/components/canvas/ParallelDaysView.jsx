@@ -356,7 +356,7 @@ export function ParallelDaysView({ profile, count = 2, mood, outfits, onTreeData
                   exit={{ opacity: 0, height: 0 }}
                   style={{ overflow: 'hidden', flexShrink: 0 }}
                 >
-                  <div style={{ padding: '8px 12px' }}>
+                  <div style={{ padding: '1px 12px 6px' }}>
                     <motion.button
                       onClick={() => onShowFullscreen?.({ type: 'compare', data: {
                         result: comparisonResult,
