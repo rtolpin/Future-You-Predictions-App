@@ -290,12 +290,18 @@ export function ParallelDaysView({ profile, count = 2, mood, outfits, onTreeData
               <motion.button
                 onClick={handleCompare}
                 disabled={!canCompare}
-                whileHover={canCompare ? { scale: 1.04, boxShadow: '0 0 32px rgba(244,63,94,0.55), 0 0 64px rgba(245,158,11,0.3)' } : {}}
+                whileHover={canCompare ? { scale: 1.05, boxShadow: '0 0 48px rgba(244,63,94,0.7), 0 0 80px rgba(245,158,11,0.4)' } : {}}
                 whileTap={{ scale: 0.96 }}
-                style={{ position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', gap: 10, padding: '11px 28px', borderRadius: 16, background: canCompare ? 'linear-gradient(135deg, #f59e0b 0%, #f43f5e 100%)' : 'rgba(255,255,255,0.06)', color: canCompare ? '#fff' : 'rgba(255,255,255,0.25)', fontFamily: 'Space Grotesk', fontWeight: 800, fontSize: 14, border: canCompare ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.08)', boxShadow: canCompare ? '0 0 24px rgba(244,63,94,0.4), 0 0 48px rgba(245,158,11,0.2), inset 0 1px 0 rgba(255,255,255,0.2)' : 'none', cursor: canCompare ? 'pointer' : 'not-allowed', opacity: canCompare ? 1 : 0.5 }}
+                animate={canCompare ? { boxShadow: [
+                  '0 0 20px rgba(244,63,94,0.4), 0 0 40px rgba(245,158,11,0.2), inset 0 1px 0 rgba(255,255,255,0.25)',
+                  '0 0 36px rgba(244,63,94,0.65), 0 0 64px rgba(245,158,11,0.35), inset 0 1px 0 rgba(255,255,255,0.25)',
+                  '0 0 20px rgba(244,63,94,0.4), 0 0 40px rgba(245,158,11,0.2), inset 0 1px 0 rgba(255,255,255,0.25)',
+                ] } : {}}
+                transition={canCompare ? { duration: 2.2, repeat: Infinity, ease: 'easeInOut' } : {}}
+                style={{ position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', gap: 10, padding: '13px 32px', borderRadius: 18, background: canCompare ? 'linear-gradient(135deg, #f59e0b 0%, #ef4444 60%, #f43f5e 100%)' : 'rgba(255,255,255,0.06)', color: canCompare ? '#fff' : 'rgba(255,255,255,0.25)', fontFamily: 'Space Grotesk', fontWeight: 900, fontSize: 15, border: canCompare ? '1.5px solid rgba(255,255,255,0.3)' : '1px solid rgba(255,255,255,0.08)', cursor: canCompare ? 'pointer' : 'not-allowed', opacity: canCompare ? 1 : 0.5 }}
               >
                 {canCompare && (
-                  <motion.div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.35) 50%, transparent 65%)', pointerEvents: 'none' }} animate={{ x: ['-100%', '200%'] }} transition={{ duration: 2.5, repeat: Infinity, ease: 'linear', repeatDelay: 2 }} />
+                  <motion.div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.4) 50%, transparent 70%)', pointerEvents: 'none' }} animate={{ x: ['-100%', '200%'] }} transition={{ duration: 2, repeat: Infinity, ease: 'linear', repeatDelay: 1.5 }} />
                 )}
                 <Play size={15} fill={canCompare ? 'currentColor' : 'none'} style={{ position: 'relative', zIndex: 1 }} />
                 <Zap size={16} fill={canCompare ? 'currentColor' : 'none'} style={{ position: 'relative', zIndex: 1 }} />
