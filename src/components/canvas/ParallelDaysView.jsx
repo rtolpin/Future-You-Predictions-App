@@ -283,9 +283,12 @@ export function ParallelDaysView({ profile, count = 2, mood, outfits, onTreeData
             {/* Compare button bar */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px 20px', gap: 12, flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.07)', background: 'rgba(0,0,0,0.25)' }}>
               {!canCompare && (
-                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', fontFamily: 'Space Grotesk' }}>
-                  Add events to both paths to enable comparison
-                </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 16px', borderRadius: 20, background: 'rgba(96,165,250,0.1)', border: '1px solid rgba(96,165,250,0.35)' }}>
+                  <span style={{ fontSize: 14 }}>💡</span>
+                  <p style={{ fontSize: 13, color: '#93c5fd', fontFamily: 'Space Grotesk', fontWeight: 700, margin: 0 }}>
+                    Add events to both paths to enable comparison
+                  </p>
+                </div>
               )}
               <motion.button
                 onClick={handleCompare}
@@ -326,6 +329,18 @@ export function ParallelDaysView({ profile, count = 2, mood, outfits, onTreeData
                 const hasPrediction = !!dayPredictions[i];
                 return (
                   <div key={i} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 12px', borderLeft: i > 0 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0 }}>
+                      <div style={{ position: 'relative', width: 16, height: 16, flexShrink: 0 }}>
+                        <div style={{ width: 16, height: 16, borderRadius: '50%', background: cfg.color, boxShadow: `0 0 12px ${cfg.color}, 0 0 24px ${cfg.color}88` }} />
+                        <div className="absolute inset-0 rounded-full animate-ping" style={{ background: cfg.color, opacity: 0.35 }} />
+                      </div>
+                      <span style={{
+                        fontSize: 18, fontWeight: 900, fontFamily: 'Space Grotesk',
+                        background: `linear-gradient(135deg, ${cfg.color} 0%, #fff 150%)`,
+                        WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+                        letterSpacing: '0.03em',
+                      }}>{cfg.label}</span>
+                    </div>
                     <motion.button
                       onClick={() => setQuickAddPath(i)}
                       whileHover={{ scale: 1.05, boxShadow: `0 0 18px rgba(${rgb},0.5)` }}
