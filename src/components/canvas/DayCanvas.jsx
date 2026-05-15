@@ -428,7 +428,7 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
             {/* Row 1: My Day centered + right controls */}
             <div className="flex items-center" style={{ padding: compact ? '10px 14px 6px' : '14px 20px 8px', gap: 8 }}>
               {/* My Day title — centered within remaining space */}
-              <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10 }}>
+              <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: 10 }}>
                 <div className="relative" style={{ width: 18, height: 18, flexShrink: 0 }}>
                   <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#00d4b1', boxShadow: '0 0 12px rgba(0,212,177,0.8), 0 0 24px rgba(0,212,177,0.4)' }} />
                   <div className="absolute inset-0 rounded-full animate-ping" style={{ background: '#00d4b1', opacity: 0.35 }} />
