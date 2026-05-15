@@ -200,9 +200,9 @@ export function DayComparisonFullscreen({ result, pathALabel, pathBLabel, colorA
         </div>
         <motion.button
           onClick={onClose}
-          whileHover={{ scale: 1.04, background: 'rgba(255,255,255,0.1)' }}
+          whileHover={{ scale: 1.05, background: 'linear-gradient(135deg, #00d4b1, #00bfa0)', boxShadow: '0 0 28px rgba(0,212,177,0.7), 0 0 60px rgba(0,212,177,0.3)', borderColor: 'rgba(0,212,177,0.9)', color: '#000' }}
           whileTap={{ scale: 0.96 }}
-          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', borderRadius: 12, border: '1.5px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.06)', cursor: 'pointer', color: '#94a3b8', fontFamily: 'Space Grotesk', fontSize: 13, fontWeight: 700 }}
+          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 12, border: '1.5px solid rgba(0,212,177,0.55)', background: 'linear-gradient(135deg, rgba(0,212,177,0.15), rgba(0,191,160,0.1))', cursor: 'pointer', color: '#00d4b1', fontFamily: 'Space Grotesk', fontSize: 13, fontWeight: 800, boxShadow: '0 0 12px rgba(0,212,177,0.25)', transition: 'all 0.15s ease' }}
         >
           <Minimize2 size={14} /> Back to Canvas
         </motion.button>

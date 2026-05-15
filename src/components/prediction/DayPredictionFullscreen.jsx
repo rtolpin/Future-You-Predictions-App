@@ -44,9 +44,9 @@ export function DayPredictionFullscreen({ prediction, eventCount, onClose, onMin
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1, transition: { duration: 0.3, ease: [0.4, 0, 0.2, 1] } }}
+      exit={{ opacity: 0, scale: 0.96, x: 40, transition: { duration: 0.35, ease: [0.4, 0, 1, 1] } }}
       style={{ position: 'fixed', inset: 0, zIndex: 99999, background: '#09090f', display: 'flex', flexDirection: 'column' }}
     >
       {/* Ambient bg */}
@@ -69,10 +69,10 @@ export function DayPredictionFullscreen({ prediction, eventCount, onClose, onMin
         <div style={{ display: 'flex', gap: 10 }}>
           <motion.button
             onClick={onMinimize}
-            whileHover={{ scale: 1.04, background: 'rgba(255,255,255,0.1)' }}
+            whileHover={{ scale: 1.05, background: 'linear-gradient(135deg, #00d4b1, #00bfa0)', boxShadow: '0 0 28px rgba(0,212,177,0.7), 0 0 60px rgba(0,212,177,0.3)', borderColor: 'rgba(0,212,177,0.9)', color: '#000' }}
             whileTap={{ scale: 0.96 }}
             title="Keep prediction in sidebar"
-            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', borderRadius: 12, border: '1.5px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.06)', cursor: 'pointer', color: '#94a3b8', fontFamily: 'Space Grotesk', fontSize: 13, fontWeight: 700 }}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 12, border: '1.5px solid rgba(0,212,177,0.55)', background: 'linear-gradient(135deg, rgba(0,212,177,0.15), rgba(0,191,160,0.1))', cursor: 'pointer', color: '#00d4b1', fontFamily: 'Space Grotesk', fontSize: 13, fontWeight: 800, boxShadow: '0 0 12px rgba(0,212,177,0.25)', transition: 'all 0.15s ease' }}
           >
             <Minimize2 size={14} /> Back to Canvas
           </motion.button>
