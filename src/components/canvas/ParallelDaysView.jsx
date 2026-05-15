@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Zap, Play, Plus, X, Clock } from 'lucide-react';
+import { Zap, Play, Plus, X, Clock, Sparkles } from 'lucide-react';
 import {
   DndContext, DragOverlay,
   PointerSensor, TouchSensor,
@@ -346,6 +346,45 @@ export function ParallelDaysView({ profile, count = 2, mood, outfits, onTreeData
                 );
               })}
             </div>
+
+            {/* AI Insights banner — visible once comparison is generated */}
+            <AnimatePresence>
+              {comparisonResult && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  style={{ overflow: 'hidden', flexShrink: 0 }}
+                >
+                  <div style={{ padding: '8px 12px' }}>
+                    <motion.button
+                      onClick={() => onShowFullscreen?.({ type: 'compare', data: {
+                        result: comparisonResult,
+                        pathALabel: DAY_CONFIGS[0].label,
+                        pathBLabel: DAY_CONFIGS[1].label,
+                        colorA: DAY_CONFIGS[0].color,
+                        colorB: DAY_CONFIGS[1].color,
+                      }})}
+                      whileHover={{ background: 'linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%)', boxShadow: '0 0 32px rgba(167,139,250,0.65), 0 0 60px rgba(139,92,246,0.3)', borderColor: 'rgba(167,139,250,0.9)', color: '#fff', scale: 1.01 }}
+                      whileTap={{ scale: 0.98 }}
+                      transition={{ duration: 0.2 }}
+                      style={{
+                        width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                        padding: '10px 20px', borderRadius: 12,
+                        background: 'linear-gradient(135deg, rgba(167,139,250,0.14), rgba(139,92,246,0.09))',
+                        border: 'none',
+                        color: '#c4b5fd', fontFamily: 'Space Grotesk', fontWeight: 800, fontSize: 13,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <Sparkles size={14} />
+                      <span>✨ AI Insights Ready — View Compare Paths AI Insights</span>
+                      <Sparkles size={14} />
+                    </motion.button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Path canvases */}
             <div style={{ flex: 1, display: 'flex', minHeight: 0, minWidth: 0 }}>
