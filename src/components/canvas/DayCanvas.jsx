@@ -132,7 +132,6 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
   const [activeCard, setActiveCard] = useState(null);
   const [scrolled, setScrolled]         = useState(false);
   const [panelsHidden, setPanelsHidden] = useState(false);
-  const lastScrollTop = useRef(0);
   const [fullscreen, setFullscreen] = useState(false);
 
   // Escape key exits fullscreen
@@ -191,17 +190,9 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
   const scrollRef = useRef(null);
 
   const handleScroll = useCallback((e) => {
-    const top  = e.currentTarget.scrollTop;
-    const prev = lastScrollTop.current;
+    const top = e.currentTarget.scrollTop;
     setScrolled(top > 40);
-    if (top === 0) {
-      setPanelsHidden(false);        // always visible at top
-    } else if (top > prev + 6) {
-      setPanelsHidden(true);         // scrolling down → hide
-    } else if (top < prev - 6) {
-      setPanelsHidden(false);        // scrolling up → show
-    }
-    lastScrollTop.current = top;
+    setPanelsHidden(top > 80);
   }, []);
 
   const [overSlotMinutes, setOverSlotMinutes] = useState(null);
@@ -538,68 +529,116 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
             </div>
             </div>{/* end Row 1 */}
 
-            {/* Row 2: Day Duration */}
-            {!compact && (
-              <div style={{ padding: '0 20px 10px', display: 'flex' }}>
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
-                  <span style={{ fontSize: 12, fontWeight: 800, color: '#94a3b8', fontFamily: 'Space Grotesk', textTransform: 'uppercase', letterSpacing: '0.07em', whiteSpace: 'nowrap' }}>⏱ Day Duration</span>
-                  <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.1)' }} />
-                  {(() => {
-                    const decStart = useHoldButton(() => setStartHour(h => Math.max(0, h - 1)));
-                    const incStart = useHoldButton(() => { setStartHour(h => { const next = Math.min(endHour - 1, h + 1); if (next >= endHour) setEndHour(e => Math.min(24, e + 1)); return next; }); });
-                    return (
-                      <div className="flex items-center" style={{ gap: 4 }}>
-                        <button {...decStart} style={{ fontSize: 13, color: '#00d4b1', cursor: 'pointer', background: 'rgba(0,212,177,0.15)', border: '1px solid rgba(0,212,177,0.3)', borderRadius: 6, width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, userSelect: 'none' }}>−</button>
-                        <span style={{ fontSize: 12, color: '#00d4b1', fontFamily: 'JetBrains Mono', fontWeight: 700, minWidth: 38, textAlign: 'center' }}>{fmtHour(startHour)}</span>
-                        <button {...incStart} style={{ fontSize: 13, color: '#00d4b1', cursor: 'pointer', background: 'rgba(0,212,177,0.15)', border: '1px solid rgba(0,212,177,0.3)', borderRadius: 6, width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, userSelect: 'none' }}>+</button>
-                      </div>
-                    );
-                  })()}
-                  <span style={{ fontSize: 16, color: '#94a3b8', fontWeight: 900, lineHeight: 1 }}>➔</span>
-                  {(() => {
-                    const decEnd = useHoldButton(() => setEndHour(h => Math.max(startHour + 1, h - 1)));
-                    const incEnd = useHoldButton(() => setEndHour(h => Math.min(24, h + 1)));
-                    return (
-                      <div className="flex items-center" style={{ gap: 4 }}>
-                        <button {...decEnd} style={{ fontSize: 13, color: '#f59e0b', cursor: 'pointer', background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 6, width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, userSelect: 'none' }}>−</button>
-                        <span style={{ fontSize: 12, color: '#f59e0b', fontFamily: 'JetBrains Mono', fontWeight: 700, minWidth: 38, textAlign: 'center' }}>{fmtHour(endHour)}</span>
-                        <button {...incEnd} style={{ fontSize: 13, color: '#f59e0b', cursor: 'pointer', background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 6, width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, userSelect: 'none' }}>+</button>
-                      </div>
-                    );
-                  })()}
+            {/* Row 2: Day Duration — professional redesign */}
+            {(() => {
+              const decStart = useHoldButton(() => setStartHour(h => Math.max(0, h - 1)));
+              const incStart = useHoldButton(() => { setStartHour(h => { const next = Math.min(endHour - 1, h + 1); if (next >= endHour) setEndHour(e => Math.min(24, e + 1)); return next; }); });
+              const decEnd   = useHoldButton(() => setEndHour(h => Math.max(startHour + 1, h - 1)));
+              const incEnd   = useHoldButton(() => setEndHour(h => Math.min(24, h + 1)));
+              const totalHrs     = endHour - startHour;
+              const barLeft      = (startHour / 24) * 100;
+              const barWidth     = (totalHrs / 24) * 100;
+              const fmtEnd       = endHour === 24 ? 'Midnight' : fmtHour(endHour);
+
+              const HourBtn = ({ col, children, ...props }) => (
+                <motion.button
+                  {...props}
+                  whileHover={{ scale: 1.15, background: `rgba(${col},0.3)` }}
+                  whileTap={{ scale: 0.88 }}
+                  style={{
+                    width: compact ? 22 : 26, height: compact ? 22 : 26,
+                    borderRadius: '50%', cursor: 'pointer', userSelect: 'none',
+                    background: `rgba(${col},0.12)`,
+                    border: `1.5px solid rgba(${col},0.4)`,
+                    color: `rgb(${col})`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: compact ? 14 : 16, fontWeight: 900, lineHeight: 1,
+                    flexShrink: 0,
+                  }}
+                >{children}</motion.button>
+              );
+
+              const TimeDisplay = ({ value, col }) => (
+                <div style={{
+                  minWidth: compact ? 44 : 56, textAlign: 'center',
+                  padding: compact ? '3px 8px' : '5px 10px',
+                  borderRadius: 8,
+                  background: `rgba(${col},0.08)`,
+                  border: `1px solid rgba(${col},0.2)`,
+                }}>
+                  <span style={{
+                    fontSize: compact ? 11 : 13, fontWeight: 800,
+                    color: `rgb(${col})`,
+                    fontFamily: 'JetBrains Mono',
+                    letterSpacing: '0.02em',
+                  }}>{value}</span>
+                </div>
+              );
+
+              return (
+                <div style={{ padding: compact ? '0 14px 8px' : '0 20px 12px', display: 'flex', alignItems: 'center', gap: compact ? 8 : 12 }}>
+                  {/* Label */}
+                  <span style={{ fontSize: 10, fontWeight: 700, color: '#475569', fontFamily: 'Space Grotesk', textTransform: 'uppercase', letterSpacing: '0.09em', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                    ⏱ Range
+                  </span>
+
+                  {/* Start hour */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: compact ? 5 : 7, flexShrink: 0 }}>
+                    <HourBtn {...decStart} col="0,212,177">−</HourBtn>
+                    <TimeDisplay value={fmtHour(startHour)} col="0,212,177" />
+                    <HourBtn {...incStart} col="0,212,177">+</HourBtn>
+                  </div>
+
+                  {/* Visual range bar — CSS transition avoids Framer Motion left+right glitch */}
+                  <div style={{ width: compact ? 80 : 120, flexShrink: 1, minWidth: 40, position: 'relative', height: 6, background: 'rgba(255,255,255,0.07)', borderRadius: 99 }}>
+                    <div style={{
+                      position: 'absolute', top: 0, bottom: 0,
+                      marginLeft: `${barLeft}%`,
+                      width: `${barWidth}%`,
+                      background: 'linear-gradient(90deg, #00d4b1, #f59e0b)',
+                      borderRadius: 99,
+                      boxShadow: '0 0 6px rgba(0,212,177,0.35)',
+                      transition: 'margin-left 0.2s ease, width 0.2s ease',
+                    }} />
+                  </div>
+
+                  {/* End hour */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: compact ? 5 : 7, flexShrink: 0 }}>
+                    <HourBtn {...decEnd} col="245,158,11">−</HourBtn>
+                    <TimeDisplay value={fmtEnd} col="245,158,11" />
+                    <HourBtn {...incEnd} col="245,158,11">+</HourBtn>
+                  </div>
+
+                  {/* Total hours badge */}
+                  <div style={{
+                    flexShrink: 0,
+                    padding: compact ? '3px 8px' : '4px 10px',
+                    borderRadius: 20,
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                  }}>
+                    <span style={{ fontSize: compact ? 10 : 12, fontWeight: 800, color: '#e2e8f0', fontFamily: 'JetBrains Mono' }}>
+                      {totalHrs}h
+                    </span>
+                  </div>
+
+                  {/* Event count */}
                   {filledCount > 0 && (
-                    <>
-                      <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.15)' }} />
-                      <span style={{ fontSize: 11, fontWeight: 800, color: '#e2e8f0', fontFamily: 'Space Grotesk' }}>
+                    <div style={{
+                      flexShrink: 0,
+                      padding: compact ? '3px 8px' : '4px 10px',
+                      borderRadius: 20,
+                      background: 'rgba(0,212,177,0.1)',
+                      border: '1px solid rgba(0,212,177,0.25)',
+                    }}>
+                      <span style={{ fontSize: compact ? 10 : 12, fontWeight: 700, color: '#00d4b1', fontFamily: 'Space Grotesk' }}>
                         {filledCount} event{filledCount !== 1 ? 's' : ''}
                       </span>
-                    </>
+                    </div>
                   )}
                 </div>
-              </div>
-            )}
-            {compact && (
-              <div style={{ padding: '0 14px 8px', display: 'flex' }}>
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                  {(() => {
-                    const decStart = useHoldButton(() => setStartHour(h => Math.max(0, h - 1)));
-                    const incStart = useHoldButton(() => setStartHour(h => { const n = Math.min(endHour - 1, h + 1); if (n >= endHour) setEndHour(e => Math.min(24, e + 1)); return n; }));
-                    const decEnd = useHoldButton(() => setEndHour(h => Math.max(startHour + 1, h - 1)));
-                    const incEnd = useHoldButton(() => setEndHour(h => Math.min(24, h + 1)));
-                    const btnStyle = (col) => ({ fontSize: 11, color: col, cursor: 'pointer', background: `rgba(${col === '#00d4b1' ? '0,212,177' : '245,158,11'},0.15)`, border: `1px solid ${col}44`, borderRadius: 5, width: 17, height: 17, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, userSelect: 'none' });
-                    return (<>
-                      <button {...decStart} style={btnStyle('#00d4b1')}>−</button>
-                      <span style={{ fontSize: 10, color: '#00d4b1', fontFamily: 'JetBrains Mono', fontWeight: 700, minWidth: 30, textAlign: 'center' }}>{fmtHour(startHour)}</span>
-                      <button {...incStart} style={btnStyle('#00d4b1')}>+</button>
-                      <span style={{ fontSize: 11, color: '#475569' }}>→</span>
-                      <button {...decEnd} style={btnStyle('#f59e0b')}>−</button>
-                      <span style={{ fontSize: 10, color: '#f59e0b', fontFamily: 'JetBrains Mono', fontWeight: 700, minWidth: 30, textAlign: 'center' }}>{fmtHour(endHour)}</span>
-                      <button {...incEnd} style={btnStyle('#f59e0b')}>+</button>
-                    </>);
-                  })()}
-                </div>
-              </div>
-            )}
+              );
+            })()}
           </div>{/* end header bar */}
 
 
@@ -608,10 +647,10 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
               style={{
                 overflow: 'hidden',
                 flexShrink: 0,
-                maxHeight: panelsHidden ? 0 : 120,
+                maxHeight: panelsHidden ? 0 : 200,
                 opacity: panelsHidden ? 0 : 1,
                 pointerEvents: panelsHidden ? 'none' : 'auto',
-                transition: 'max-height 0.28s ease, opacity 0.22s ease',
+                transition: 'max-height 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.25s ease',
               }}
             >
               {/* ── Mood picker bar ── */}
