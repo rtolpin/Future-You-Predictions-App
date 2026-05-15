@@ -78,7 +78,7 @@ export function UserProfilePage({ profile, account, goals = [], onClose, onEditP
                 {account ? '✦ Signed In' : '✦ Guest'}
               </p>
               <h2 style={{ fontFamily: 'Space Grotesk', fontWeight: 900, fontSize: 26, color: '#f1f5f9', lineHeight: 1.15, marginBottom: 4 }}>
-                {profile?.name || account?.name || 'Your Profile'}
+                {account?.name || profile?.name || 'Your Profile'}
               </h2>
               {account?.email && (
                 <p style={{ fontSize: 13, color: '#64748b', fontFamily: 'DM Sans', display: 'flex', alignItems: 'center', gap: 5 }}>

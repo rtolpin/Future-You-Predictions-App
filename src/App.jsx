@@ -404,14 +404,16 @@ export default function App() {
     localStorage.setItem('future-you-account', JSON.stringify(user));
     setAccount(user);
     setShowAuth(false);
-    // Load saved profile from backend and apply it if present
     try {
-      const { profile: savedProfile } = await profileClient.load();
-      if (savedProfile) {
-        localStorage.setItem('future-you-profile', JSON.stringify(savedProfile));
-        setProfile(savedProfile);
+      const { profile: backendProfile } = await profileClient.load();
+      if (backendProfile) {
+        // Account has a saved profile — always restore it, overriding any local data
+        localStorage.setItem('future-you-profile', JSON.stringify(backendProfile));
+        setProfile(backendProfile);
       }
-    } catch { /* silently ignore — localStorage profile stays */ }
+      // No backend profile yet — leave local profile untouched.
+      // User can open Identity Panel and Save to persist it for future sign-ins.
+    } catch { /* silently ignore */ }
   }, []);
 
   const handleLogout = useCallback(() => {
@@ -489,6 +491,14 @@ export default function App() {
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onUp);
   }, [predictionWidth]);
+
+  // Auto-sync current profile to backend when user signs in and has no backend profile yet
+  useEffect(() => {
+    if (!account || !profile) return;
+    profileClient.load().then(({ profile: backendProfile }) => {
+      if (!backendProfile) profileClient.save(profile).catch(() => {});
+    }).catch(() => {});
+  }, [account]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleProfileComplete = useCallback((p) => {
     localStorage.setItem('future-you-profile', JSON.stringify(p));
@@ -834,7 +844,7 @@ export default function App() {
               className="flex items-center gap-2 px-3.5 py-2 rounded-xl transition-all cursor-pointer"
               style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
             >
-              <ProfileAvatar profile={profile} compact />
+              <ProfileAvatar profile={account?.name ? { ...profile, name: account.name } : profile} compact />
               <Settings2 size={13} className="text-slate-600" />
             </motion.button>
           </div>
