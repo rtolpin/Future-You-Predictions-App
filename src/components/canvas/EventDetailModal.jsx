@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
-import { X, MapPin, AlignLeft, Clock, Save, Sun, Check, Trash2 } from 'lucide-react';
+import { X, MapPin, AlignLeft, Clock, Save, Sun, Check, Trash2, ChevronDown } from 'lucide-react';
 import { CATEGORY_META } from '../../data/decisionCards.js';
 import { minutesToLabel } from '../../hooks/useTimeline.js';
 
@@ -40,53 +41,206 @@ function formatDuration(mins) {
   return `${h}h ${m}m`;
 }
 
-function minsToTimeValue(totalMinutes) {
-  const safe = totalMinutes || 0;
-  const h = Math.floor(safe / 60) % 24;
-  const m = safe % 60;
-  return `${pad(h)}:${pad(m)}`;
+const PICKER_HOURS   = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+const PICKER_MINUTES = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
+
+function PickerOption({ selected, onClick, children, color, rgb }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <div
+      data-selected={selected || undefined}
+      onClick={onClick}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        padding: '9px 8px', textAlign: 'center', borderRadius: 8, margin: '2px 6px',
+        fontFamily: 'JetBrains Mono', fontSize: 15,
+        fontWeight: selected ? 800 : 500,
+        color: selected ? color : hov ? '#e2e8f0' : '#64748b',
+        background: selected ? `rgba(${rgb},0.18)` : hov ? 'rgba(255,255,255,0.06)' : 'transparent',
+        boxShadow: selected ? `inset 0 0 0 1px rgba(${rgb},0.35)` : 'none',
+        cursor: 'pointer',
+        transition: 'all 0.1s ease',
+        userSelect: 'none',
+      }}
+    >{children}</div>
+  );
 }
 
 function TimePicker({ label, totalMinutes, onChange, color, rgb }) {
-  const [inputVal, setInputVal] = useState(minsToTimeValue(totalMinutes));
+  const [open, setOpen]       = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const [dropPos, setDropPos] = useState(null);
+  const triggerRef            = useRef(null);
+  const hourListRef           = useRef(null);
+  const minListRef            = useRef(null);
 
-  useEffect(() => {
-    setInputVal(minsToTimeValue(totalMinutes));
-  }, [totalMinutes]);
+  const safe   = totalMinutes || 0;
+  const h24    = Math.floor(safe / 60) % 24;
+  const min    = safe % 60;
+  const period = h24 < 12 ? 'AM' : 'PM';
+  const h12    = h24 === 0 ? 12 : h24 > 12 ? h24 - 12 : h24;
 
-  const handleChange = (e) => {
-    setInputVal(e.target.value);
-    if (e.target.value) {
-      const [h, m] = e.target.value.split(':').map(Number);
-      if (!isNaN(h) && !isNaN(m)) onChange(h * 60 + m);
-    }
+  const openDropdown = () => {
+    if (!triggerRef.current) return;
+    const r = triggerRef.current.getBoundingClientRect();
+    setDropPos({ top: r.bottom + 8, left: r.left, width: r.width });
+    setOpen(true);
   };
 
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (triggerRef.current && !triggerRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  // Scroll selected options into view when dropdown opens
+  useEffect(() => {
+    if (!open) return;
+    const scroll = (ref) => {
+      const el = ref.current?.querySelector('[data-selected]');
+      if (el) el.scrollIntoView({ block: 'center', behavior: 'instant' });
+    };
+    setTimeout(() => { scroll(hourListRef); scroll(minListRef); }, 20);
+  }, [open]);
+
+  const setHour12 = (h) => {
+    const newH24 = period === 'AM' ? (h === 12 ? 0 : h) : (h === 12 ? 12 : h + 12);
+    onChange(newH24 * 60 + min);
+  };
+  const setMin    = (m) => onChange(h24 * 60 + m);
+  const setPeriod = (p) => {
+    let newH24 = h24;
+    if (p === 'AM' && h24 >= 12) newH24 = h24 - 12;
+    if (p === 'PM' && h24 < 12)  newH24 = h24 + 12;
+    onChange(newH24 * 60 + min);
+  };
+
+  const isActive = open || hovered;
+
+  const dropdown = open && dropPos && createPortal(
+    <div
+      onMouseDown={e => e.stopPropagation()}
+      style={{
+        position: 'fixed',
+        top: dropPos.top, left: dropPos.left, width: dropPos.width,
+        zIndex: 9999,
+        background: 'linear-gradient(160deg, #13131e 0%, #0d0d1a 100%)',
+        border: `1.5px solid rgba(${rgb},0.35)`,
+        borderRadius: 16,
+        boxShadow: `0 0 40px rgba(${rgb},0.18), 0 24px 48px rgba(0,0,0,0.75)`,
+        display: 'grid', gridTemplateColumns: '1fr 1fr auto',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Column headers */}
+      {[['Hour', false], ['Min', true], ['', true]].map(([title, border], i) => (
+        <div key={i} style={{
+          padding: '9px 0 7px', textAlign: 'center',
+          fontSize: 10, fontWeight: 700, color: '#334155',
+          fontFamily: 'Space Grotesk', textTransform: 'uppercase', letterSpacing: '0.08em',
+          borderBottom: '1px solid rgba(255,255,255,0.07)',
+          borderLeft: border ? '1px solid rgba(255,255,255,0.07)' : 'none',
+          paddingLeft: i === 2 ? 14 : 0, paddingRight: i === 2 ? 14 : 0,
+        }}>{title}</div>
+      ))}
+
+      {/* Hours */}
+      <div ref={hourListRef} style={{ maxHeight: 200, overflowY: 'auto', padding: '6px 0 8px', scrollbarWidth: 'none' }}>
+        {PICKER_HOURS.map(h => (
+          <PickerOption key={h} selected={h === h12} onClick={() => setHour12(h)} color={color} rgb={rgb}>{h}</PickerOption>
+        ))}
+      </div>
+
+      {/* Minutes */}
+      <div ref={minListRef} style={{ maxHeight: 200, overflowY: 'auto', padding: '6px 0 8px', borderLeft: '1px solid rgba(255,255,255,0.07)', scrollbarWidth: 'none' }}>
+        {PICKER_MINUTES.map(m => (
+          <PickerOption key={m} selected={m === min} onClick={() => setMin(m)} color={color} rgb={rgb}>{pad(m)}</PickerOption>
+        ))}
+      </div>
+
+      {/* AM / PM */}
+      <div style={{ borderLeft: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', gap: 8, padding: '10px 10px 14px', justifyContent: 'flex-start' }}>
+        {['AM', 'PM'].map(p => {
+          const sel = period === p;
+          return (
+            <motion.div
+              key={p}
+              onClick={() => setPeriod(p)}
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.95 }}
+              style={{
+                padding: '11px 14px', textAlign: 'center',
+                fontFamily: 'Space Grotesk', fontSize: 13, fontWeight: 800,
+                color: sel ? color : '#475569',
+                background: sel ? `rgba(${rgb},0.2)` : 'rgba(255,255,255,0.04)',
+                border: `1.5px solid ${sel ? `rgba(${rgb},0.55)` : 'rgba(255,255,255,0.08)'}`,
+                borderRadius: 10, cursor: 'pointer',
+                boxShadow: sel ? `0 0 12px rgba(${rgb},0.25)` : 'none',
+                transition: 'all 0.15s ease', userSelect: 'none',
+              }}
+            >{p}</motion.div>
+          );
+        })}
+      </div>
+    </div>,
+    document.body
+  );
+
   return (
-    <div>
-      <p style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', fontFamily: 'Space Grotesk', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>{label}</p>
-      <input
-        type="time"
-        value={inputVal}
-        step={900}
-        onChange={handleChange}
+    <div style={{ position: 'relative' }}>
+      <p style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', fontFamily: 'Space Grotesk', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>
+        {label}
+      </p>
+
+      {/* Trigger */}
+      <div
+        ref={triggerRef}
+        onClick={() => open ? setOpen(false) : openDropdown()}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
         style={{
-          width: '100%',
-          background: 'rgba(255,255,255,0.06)',
-          border: `1.5px solid rgba(${rgb},0.35)`,
-          borderRadius: 12,
-          color: '#f1f5f9',
-          fontFamily: 'JetBrains Mono, monospace',
-          fontSize: 16,
-          fontWeight: 700,
+          display: 'flex', alignItems: 'center', gap: 10,
           padding: '12px 14px',
-          outline: 'none',
-          cursor: 'pointer',
-          colorScheme: 'dark',
-          boxSizing: 'border-box',
-          boxShadow: `inset 0 0 0 1px rgba(${rgb},0.08)`,
+          background: isActive ? `rgba(${rgb},0.14)` : `rgba(${rgb},0.07)`,
+          border: `2px solid rgba(${rgb},${isActive ? 0.85 : 0.45})`,
+          borderRadius: 14, cursor: 'pointer', userSelect: 'none',
+          boxShadow: isActive
+            ? `0 0 0 3px rgba(${rgb},0.18), 0 0 20px rgba(${rgb},0.1)`
+            : `0 0 0 1px rgba(${rgb},0.08)`,
+          transition: 'all 0.15s ease',
         }}
-      />
+      >
+        {/* Clock badge */}
+        <div style={{
+          width: 30, height: 30, borderRadius: 8, flexShrink: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: isActive ? `rgba(${rgb},0.25)` : `rgba(${rgb},0.12)`,
+          border: `1px solid rgba(${rgb},${isActive ? 0.5 : 0.25})`,
+          transition: 'all 0.15s ease',
+        }}>
+          <Clock size={14} color={`rgb(${rgb})`} />
+        </div>
+
+        {/* Time value */}
+        <span style={{ fontFamily: 'JetBrains Mono', fontSize: 19, fontWeight: 800, color: '#f1f5f9', letterSpacing: '0.03em', flex: 1, lineHeight: 1 }}>
+          {h12}:{pad(min)}
+        </span>
+        <span style={{ fontFamily: 'Space Grotesk', fontSize: 19, fontWeight: 700, color: `rgb(${rgb})`, flexShrink: 0, lineHeight: 1 }}>
+          {period}
+        </span>
+
+        <ChevronDown
+          size={14} color={`rgba(${rgb},0.7)`}
+          style={{ flexShrink: 0, transition: 'transform 0.2s ease', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
+        />
+      </div>
+
+      {dropdown}
     </div>
   );
 }
