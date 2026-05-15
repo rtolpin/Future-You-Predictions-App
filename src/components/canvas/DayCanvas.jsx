@@ -18,7 +18,7 @@ import {
   useSensor, useSensors, useDroppable, closestCenter,
 } from '@dnd-kit/core';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, RotateCcw, Clock, Maximize2, Minimize2, ChevronLeft, ChevronRight, LayoutList } from 'lucide-react';
+import { Play, RotateCcw, Clock, Maximize2, Minimize2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, LayoutList, GripVertical } from 'lucide-react';
 import { DecisionCard } from './DecisionCard.jsx';
 import { CardLibrary } from './CardLibrary.jsx';
 import { EventBlock } from './EventBlock.jsx';
@@ -146,6 +146,18 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
   const [showMoodModal, setShowMoodModal]     = useState(false);
   const [showOutfitModal, setShowOutfitModal] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(true);
+  const [libraryWidth, setLibraryWidth] = useState(256);
+  const libraryResizeRef = useRef(null);
+
+  const handleLibraryResizeStart = useCallback((e) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = libraryWidth;
+    const onMove = (mv) => setLibraryWidth(Math.min(480, Math.max(180, startW + mv.clientX - startX)));
+    const onUp   = () => { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }, [libraryWidth]);
   const [editingEvent, setEditingEvent] = useState(null);
   const [startHour, setStartHour] = useState(5);
   const [endHour, setEndHour] = useState(24);
@@ -249,88 +261,110 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
         {/* Card Library — desktop: collapsible sidebar | mobile: bottom drawer */}
         {!fullscreen && !noOwnContext && !isMobile && (
           <motion.div
-            animate={{ width: libraryOpen ? 256 : 40 }}
+            animate={{ width: libraryOpen ? libraryWidth : 40 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="shrink-0 overflow-hidden flex flex-col"
+            className="shrink-0 flex flex-col relative"
             style={{
               borderRight: '1px solid rgba(255,255,255,0.06)',
               background: 'rgba(0,0,0,0.25)',
-              minWidth: 0,
+              minWidth: 0, zIndex: 10, overflow: 'visible',
             }}
           >
             {libraryOpen ? (
-              /* ── Expanded library ── */
-              <div
-                className="flex flex-col h-full"
-                style={{ width: 256, overflowY: activeCard ? 'hidden' : 'auto' }}
-              >
-                {/* Library header with collapse button */}
+              <>
+                {/* Drag-to-resize handle — straddles the right border */}
                 <div
-                  className="flex items-center justify-between shrink-0"
-                  style={{ padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+                  onMouseDown={handleLibraryResizeStart}
+                  style={{ position: 'absolute', right: -12, top: 0, bottom: 0, width: 24, cursor: 'col-resize', zIndex: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  onMouseEnter={e => {
+                    e.currentTarget.querySelector('.lib-resize-line').style.background = '#00d4b1';
+                    e.currentTarget.querySelector('.lib-resize-line').style.boxShadow = '0 0 8px rgba(0,212,177,0.6)';
+                    e.currentTarget.querySelector('.lib-resize-arrows').style.borderColor = 'rgba(0,212,177,0.7)';
+                    e.currentTarget.querySelector('.lib-resize-arrows').style.boxShadow = '0 0 12px rgba(0,212,177,0.4)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.querySelector('.lib-resize-line').style.background = 'rgba(255,255,255,0.15)';
+                    e.currentTarget.querySelector('.lib-resize-line').style.boxShadow = 'none';
+                    e.currentTarget.querySelector('.lib-resize-arrows').style.borderColor = 'rgba(0,212,177,0.35)';
+                    e.currentTarget.querySelector('.lib-resize-arrows').style.boxShadow = '0 0 6px rgba(0,212,177,0.12)';
+                  }}
                 >
-                  <span className="text-xs font-semibold tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                    Card Library
-                  </span>
-                  <button
-                    onClick={() => setLibraryOpen(false)}
-                    title="Collapse library"
-                    style={{
-                      background: 'rgba(255,255,255,0.06)',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      borderRadius: 6,
-                      padding: '3px 6px',
-                      cursor: 'pointer',
-                      color: 'rgba(255,255,255,0.5)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 3,
-                    }}
-                  >
-                    <ChevronLeft size={13} />
-                  </button>
+                  <div className="lib-resize-line" style={{ width: 2, height: '100%', background: 'rgba(255,255,255,0.15)', borderRadius: 2, transition: 'all 0.15s' }} />
+                  <div className="lib-resize-arrows" style={{
+                    position: 'absolute', top: '50%', left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    display: 'flex', alignItems: 'center', gap: 1,
+                    background: 'rgba(9,9,15,0.95)',
+                    border: '1px solid rgba(0,212,177,0.35)',
+                    borderRadius: 8, padding: '5px 6px',
+                    color: '#00d4b1', fontSize: 12, fontWeight: 900,
+                    opacity: 1, transition: 'all 0.15s',
+                    userSelect: 'none', pointerEvents: 'none',
+                    whiteSpace: 'nowrap', lineHeight: 1,
+                    boxShadow: '0 0 8px rgba(0,212,177,0.12)',
+                  }}>
+                    ‹ ›
+                  </div>
                 </div>
-                <CardLibrary />
-              </div>
+
+                {/* Expanded library content */}
+                <div className="flex flex-col h-full" style={{ overflow: 'hidden', overflowY: activeCard ? 'hidden' : 'auto' }}>
+                  {/* Header */}
+                  <div className="flex items-center justify-between shrink-0" style={{ padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                    <span className="text-xs font-semibold tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                      Card Library
+                    </span>
+                    <motion.button
+                      onClick={() => setLibraryOpen(false)}
+                      title="Collapse library"
+                      whileHover={{ scale: 1.08, background: 'rgba(255,255,255,0.14)', color: '#e2e8f0', borderColor: 'rgba(255,255,255,0.3)' }}
+                      whileTap={{ scale: 0.92 }}
+                      style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(255,255,255,0.07)', border: '1.5px solid rgba(255,255,255,0.18)', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s' }}
+                    >
+                      <ChevronsLeft size={13} />
+                    </motion.button>
+                  </div>
+                  <CardLibrary />
+                </div>
+              </>
             ) : (
-              /* ── Collapsed slim rail ── */
-              <div className="flex flex-col items-center h-full" style={{ width: 40, paddingTop: 12, gap: 0 }}>
-                <button
-                  onClick={() => setLibraryOpen(true)}
-                  title="Expand library"
-                  style={{
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: 6,
-                    padding: '6px 7px',
-                    cursor: 'pointer',
-                    color: 'rgba(255,255,255,0.5)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginBottom: 10,
-                  }}
-                >
-                  <ChevronRight size={13} />
-                </button>
-                {/* Rotated label */}
-                <div
-                  style={{
-                    writingMode: 'vertical-rl',
-                    transform: 'rotate(180deg)',
-                    fontSize: 10,
-                    fontWeight: 700,
-                    letterSpacing: '0.12em',
-                    textTransform: 'uppercase',
-                    color: 'rgba(255,255,255,0.2)',
-                    userSelect: 'none',
-                    marginTop: 4,
-                  }}
-                >
-                  Cards
+              /* ── Collapsed rail — entire strip is one big click target ── */
+              <motion.button
+                onClick={() => setLibraryOpen(true)}
+                title="Expand library"
+                whileHover={{ background: 'rgba(0,212,177,0.08)' }}
+                whileTap={{ scale: 0.97 }}
+                style={{
+                  width: 40, height: '100%', cursor: 'pointer', border: 'none',
+                  background: 'transparent',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  paddingTop: 14, gap: 12,
+                  borderRight: '2px solid rgba(0,212,177,0.15)',
+                  transition: 'background 0.15s, border-color 0.15s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.borderRightColor = 'rgba(0,212,177,0.45)'}
+                onMouseLeave={e => e.currentTarget.style.borderRightColor = 'rgba(0,212,177,0.15)'}
+              >
+                <div style={{
+                  width: 32, height: 32, borderRadius: 10,
+                  background: 'rgba(0,212,177,0.14)',
+                  border: '1.5px solid rgba(0,212,177,0.45)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#00d4b1', flexShrink: 0,
+                  boxShadow: '0 0 10px rgba(0,212,177,0.15)',
+                }}>
+                  <ChevronsRight size={16} />
                 </div>
-                <LayoutList size={14} style={{ color: 'rgba(255,255,255,0.15)', marginTop: 10 }} />
-              </div>
+                <div style={{
+                  writingMode: 'vertical-rl',
+                  fontSize: 11, fontWeight: 800, letterSpacing: '0.1em',
+                  textTransform: 'uppercase', color: 'rgba(0,212,177,0.6)',
+                  fontFamily: 'Space Grotesk', userSelect: 'none',
+                }}>
+                  Card Library
+                </div>
+                <LayoutList size={14} color="rgba(0,212,177,0.4)" />
+              </motion.button>
             )}
           </motion.div>
         )}
@@ -543,32 +577,35 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
               <motion.button
                 onClick={() => onSimulateAll?.()}
                 disabled={filledCount === 0}
-                whileHover={filledCount > 0 ? { scale: 1.04, boxShadow: `0 0 24px ${dayColor}88` } : {}}
-                whileTap={{ scale: 0.96 }}
+                whileHover={filledCount > 0 ? { scale: 1.06, boxShadow: `0 0 32px ${dayColor}aa, 0 0 60px ${dayColor}44` } : {}}
+                whileTap={{ scale: 0.95 }}
                 className="relative overflow-hidden flex items-center font-bold text-black disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
                 style={{
-                  gap: 7, padding: compact ? '8px 14px' : '9px 20px',
+                  gap: 8, padding: compact ? '8px 16px' : '11px 26px',
                   background: filledCount > 0
                     ? `linear-gradient(135deg, ${dayColor} 0%, ${dayColor}cc 100%)`
                     : `${dayColor}44`,
-                  boxShadow: filledCount > 0 ? `0 0 14px ${dayColor}66, inset 0 1px 0 rgba(255,255,255,0.25)` : 'none',
-                  borderRadius: 14, fontSize: compact ? 12 : 13,
-                  border: '1px solid rgba(255,255,255,0.2)',
+                  boxShadow: filledCount > 0 ? `0 0 20px ${dayColor}77, inset 0 1px 0 rgba(255,255,255,0.3)` : 'none',
+                  borderRadius: 16, fontSize: compact ? 12 : 15, fontFamily: 'Space Grotesk',
+                  border: '1px solid rgba(255,255,255,0.25)',
                   whiteSpace: 'nowrap',
                 }}
+                animate={filledCount > 0 ? { boxShadow: [`0 0 16px ${dayColor}55`, `0 0 28px ${dayColor}99`, `0 0 16px ${dayColor}55`] } : {}}
+                transition={filledCount > 0 ? { duration: 2, repeat: Infinity, ease: 'easeInOut' } : {}}
               >
+                {/* Shimmer sweep */}
                 {filledCount > 0 && (
                   <motion.div
                     className="absolute inset-0 pointer-events-none"
-                    style={{ background: 'linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.3) 50%, transparent 65%)' }}
+                    style={{ background: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.35) 50%, transparent 70%)' }}
                     animate={{ x: ['-100%', '200%'] }}
-                    transition={{ duration: 2.2, repeat: Infinity, ease: 'linear', repeatDelay: 1.5 }}
+                    transition={{ duration: 2, repeat: Infinity, ease: 'linear', repeatDelay: 1.2 }}
                   />
                 )}
-                <Play size={12} fill="currentColor" style={{ position: 'relative', zIndex: 1 }} />
-                <span style={{ position: 'relative', zIndex: 1 }}>Simulate</span>
+                <Play size={compact ? 12 : 15} fill="currentColor" style={{ position: 'relative', zIndex: 1 }} />
+                <span style={{ position: 'relative', zIndex: 1, fontWeight: 900 }}>Simulate Day</span>
                 {filledCount > 0 && (
-                  <span style={{ position: 'relative', zIndex: 1, background: 'rgba(0,0,0,0.2)', borderRadius: 5, padding: '1px 5px', fontSize: 10, fontWeight: 900 }}>{filledCount}</span>
+                  <span style={{ position: 'relative', zIndex: 1, background: 'rgba(0,0,0,0.25)', borderRadius: 6, padding: '2px 7px', fontSize: 11, fontWeight: 900 }}>{filledCount}</span>
                 )}
               </motion.button>
             </div>
