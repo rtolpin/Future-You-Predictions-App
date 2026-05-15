@@ -327,7 +327,9 @@ function LoadingOrbs() {
   );
 }
 
-function EmptyState() {
+function EmptyState({ onSimulateAll, filledCount }) {
+  const canSimulate = filledCount > 0 && !!onSimulateAll;
+
   return (
     <div className="flex flex-col items-center justify-center h-full text-center" style={{ gap: 16, padding: '0 20px' }}>
       <motion.div
@@ -339,22 +341,43 @@ function EmptyState() {
         🔮
       </motion.div>
       <div>
-        <p style={{ fontFamily: 'Space Grotesk', fontWeight: 700, color: '#475569', fontSize: 13, marginBottom: 8 }}>No prediction yet</p>
-        <p style={{ color: '#334155', fontSize: 12, lineHeight: 1.6 }}>
-          Add activities to the timeline, then click{' '}
-          <span style={{ color: '#00d4b1', fontWeight: 600 }}>Simulate Day</span>
+        <p style={{ fontFamily: 'Space Grotesk', fontWeight: 800, color: '#cbd5e1', fontSize: 15, marginBottom: 8 }}>No prediction yet</p>
+        <p style={{ color: '#94a3b8', fontSize: 13, lineHeight: 1.65 }}>
+          {canSimulate
+            ? `You have ${filledCount} activit${filledCount === 1 ? 'y' : 'ies'} — ready to simulate!`
+            : <>Add activities to the timeline, then click{' '}<span style={{ color: '#00d4b1', fontWeight: 700 }}>Simulate Day</span></>
+          }
         </p>
       </div>
-      {[
+      {!canSimulate && [
         { icon: '1️⃣', text: 'Drag cards onto the timeline' },
         { icon: '2️⃣', text: 'Click "Simulate Day"' },
         { icon: '3️⃣', text: 'See your full day prediction' },
       ].map(({ icon, text }) => (
-        <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 10, width: '100%', textAlign: 'left' }}>
-          <span style={{ fontSize: 14, flexShrink: 0 }}>{icon}</span>
-          <span style={{ color: '#475569', fontSize: 12 }}>{text}</span>
+        <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, width: '100%', textAlign: 'left' }}>
+          <span style={{ fontSize: 16, flexShrink: 0 }}>{icon}</span>
+          <span style={{ color: '#94a3b8', fontSize: 13, fontWeight: 500 }}>{text}</span>
         </div>
       ))}
+      {canSimulate && (
+        <motion.button
+          onClick={onSimulateAll}
+          whileHover={{ scale: 1.04, boxShadow: '0 0 28px rgba(167,139,250,0.55), 0 0 50px rgba(139,92,246,0.3)' }}
+          whileTap={{ scale: 0.96 }}
+          animate={{ boxShadow: ['0 0 10px rgba(167,139,250,0.25)', '0 0 22px rgba(167,139,250,0.5)', '0 0 10px rgba(167,139,250,0.25)'] }}
+          transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            padding: '10px 24px', borderRadius: 24,
+            background: 'linear-gradient(135deg, #a78bfa, #7c3aed)',
+            border: '1px solid rgba(255,255,255,0.25)',
+            color: '#fff', fontFamily: 'Space Grotesk', fontWeight: 800, fontSize: 14,
+            cursor: 'pointer',
+          }}
+        >
+          <Sparkles size={15} /> Generate AI Prediction
+        </motion.button>
+      )}
     </div>
   );
 }
@@ -404,19 +427,18 @@ function DayPredictionSidebar({ prediction, onExpand }) {
   );
 }
 
-export function PredictionPanel({ prediction, dayPrediction, isLoading, selectedSlot, onClose, isFullscreen, onToggleFullscreen, retroResult, onClearRetro, summaryResult, onClearSummary }) {
+export function PredictionPanel({ prediction, dayPrediction, isLoading, selectedSlot, onClose, isFullscreen, onToggleFullscreen, retroResult, onClearRetro, summaryResult, onClearSummary, onSimulateAll, filledCount = 0 }) {
   return (
     <div className="h-full flex flex-col overflow-hidden" style={{ background: 'rgba(0,0,0,0.35)' }}>
       {/* Fullscreen button — shown when a full day prediction exists */}
       {!isFullscreen && dayPrediction && (
         <motion.button
           onClick={onToggleFullscreen}
-          whileHover={{ background: 'linear-gradient(135deg, rgba(0,212,177,0.22), rgba(167,139,250,0.15))', boxShadow: '0 0 18px rgba(0,212,177,0.3)' }}
+          whileHover={{ background: 'linear-gradient(135deg, #00d4b1 0%, #00bfa0 100%)', boxShadow: '0 0 32px rgba(0,212,177,0.65), 0 0 60px rgba(0,212,177,0.3)', color: '#000', scale: 1.01 }}
           whileTap={{ scale: 0.97 }}
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
             padding: '10px 14px', flexShrink: 0,
-            borderBottom: '1px solid rgba(0,212,177,0.2)',
             background: 'linear-gradient(135deg, rgba(0,212,177,0.1), rgba(167,139,250,0.08))',
             cursor: 'pointer', color: '#00d4b1',
             fontFamily: 'Space Grotesk', fontWeight: 800, fontSize: 12,
@@ -453,7 +475,7 @@ export function PredictionPanel({ prediction, dayPrediction, isLoading, selected
             )}
             {!isLoading && !dayPrediction && !summaryResult && !retroResult && (
               <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full">
-                <EmptyState />
+                <EmptyState onSimulateAll={onSimulateAll} filledCount={filledCount} />
               </motion.div>
             )}
           </AnimatePresence>

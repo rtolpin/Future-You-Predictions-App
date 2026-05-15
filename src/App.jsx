@@ -973,6 +973,8 @@ export default function App() {
                             onClearRetro={() => setRetroResult(null)}
                             summaryResult={summaryResult}
                             onClearSummary={() => setSummaryResult(null)}
+                            onSimulateAll={handleSimulateAll}
+                            filledCount={filledSlotCount}
                           />
                         ) : (
                           <RightPanelGoals

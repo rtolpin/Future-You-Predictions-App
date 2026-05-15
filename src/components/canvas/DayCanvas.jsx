@@ -515,7 +515,7 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
                     ? `linear-gradient(135deg, ${dayColor} 0%, ${dayColor}cc 100%)`
                     : `${dayColor}44`,
                   boxShadow: filledCount > 0 ? `0 0 ${compact ? 10 : 20}px ${dayColor}77, inset 0 1px 0 rgba(255,255,255,0.3)` : 'none',
-                  borderRadius: compact ? 10 : 16,
+                  borderRadius: compact ? 10 : 24,
                   fontSize: compact ? 11 : 15, fontFamily: 'Space Grotesk',
                   border: '1px solid rgba(255,255,255,0.25)',
                   flexShrink: 1, minWidth: 0, opacity: compact && filledCount === 0 ? 0.4 : undefined,
