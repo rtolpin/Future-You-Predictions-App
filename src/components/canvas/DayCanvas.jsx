@@ -468,8 +468,8 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
                 </div>
               )}
 
-              {/* Fullscreen toggle — hidden in compact mode */}
-              {!compact && (
+              {/* Fullscreen toggle — hidden in compact mode and when already fullscreen */}
+              {!compact && !fullscreen && (
                 <motion.button
                   onClick={() => setFullscreen(f => !f)}
                   whileHover={{ scale: 1.05, background: 'rgba(0,212,177,0.18)', borderColor: 'rgba(0,212,177,0.6)', boxShadow: '0 0 16px rgba(0,212,177,0.3)' }}
