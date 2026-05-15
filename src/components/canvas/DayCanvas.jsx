@@ -495,24 +495,26 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
               <motion.button
                 onClick={() => onSimulateAll?.()}
                 disabled={filledCount === 0}
+                title="Simulate Day"
                 whileHover={filledCount > 0 ? { scale: 1.06, boxShadow: `0 0 32px ${dayColor}aa, 0 0 60px ${dayColor}44` } : {}}
                 whileTap={{ scale: 0.95 }}
                 className="relative overflow-hidden flex items-center font-bold text-black disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
                 style={{
-                  gap: 8, padding: compact ? '8px 16px' : '11px 26px',
+                  gap: compact ? 5 : 8,
+                  padding: compact ? '5px 10px' : '11px 26px',
                   background: filledCount > 0
                     ? `linear-gradient(135deg, ${dayColor} 0%, ${dayColor}cc 100%)`
                     : `${dayColor}44`,
-                  boxShadow: filledCount > 0 ? `0 0 20px ${dayColor}77, inset 0 1px 0 rgba(255,255,255,0.3)` : 'none',
-                  borderRadius: 16, fontSize: compact ? 12 : 15, fontFamily: 'Space Grotesk',
+                  boxShadow: filledCount > 0 ? `0 0 ${compact ? 10 : 20}px ${dayColor}77, inset 0 1px 0 rgba(255,255,255,0.3)` : 'none',
+                  borderRadius: compact ? 10 : 16,
+                  fontSize: compact ? 11 : 15, fontFamily: 'Space Grotesk',
                   border: '1px solid rgba(255,255,255,0.25)',
-                  flexShrink: 1, minWidth: 0,
+                  flexShrink: 1, minWidth: 0, opacity: compact && filledCount === 0 ? 0.4 : undefined,
                 }}
-                animate={filledCount > 0 ? { boxShadow: [`0 0 16px ${dayColor}55`, `0 0 28px ${dayColor}99`, `0 0 16px ${dayColor}55`] } : {}}
+                animate={!compact && filledCount > 0 ? { boxShadow: [`0 0 16px ${dayColor}55`, `0 0 28px ${dayColor}99`, `0 0 16px ${dayColor}55`] } : {}}
                 transition={filledCount > 0 ? { duration: 2, repeat: Infinity, ease: 'easeInOut' } : {}}
               >
-                {/* Shimmer sweep */}
-                {filledCount > 0 && (
+                {!compact && filledCount > 0 && (
                   <motion.div
                     className="absolute inset-0 pointer-events-none"
                     style={{ background: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.35) 50%, transparent 70%)' }}
@@ -520,10 +522,19 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
                     transition={{ duration: 2, repeat: Infinity, ease: 'linear', repeatDelay: 1.2 }}
                   />
                 )}
-                <Play size={compact ? 12 : 15} fill="currentColor" style={{ position: 'relative', zIndex: 1, flexShrink: 0 }} />
-                <span style={{ position: 'relative', zIndex: 1, fontWeight: 900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, flexShrink: 1 }}>Simulate Day</span>
-                {filledCount > 0 && (
-                  <span style={{ position: 'relative', zIndex: 1, background: 'rgba(0,0,0,0.25)', borderRadius: 6, padding: '2px 7px', fontSize: 11, fontWeight: 900, flexShrink: 0 }}>{filledCount}</span>
+                <Play size={compact ? 11 : 15} fill="currentColor" style={{ position: 'relative', zIndex: 1, flexShrink: 0 }} />
+                {compact ? (
+                  <>
+                    <span style={{ position: 'relative', zIndex: 1, fontWeight: 800, fontSize: 11, whiteSpace: 'nowrap', flexShrink: 1 }}>Simulate Only</span>
+                    <span style={{ position: 'relative', zIndex: 1, background: 'rgba(0,0,0,0.2)', borderRadius: 5, padding: '1px 6px', fontSize: 10, fontWeight: 900, color: '#fff', flexShrink: 0 }}>{dayLabel}</span>
+                  </>
+                ) : (
+                  <>
+                    <span style={{ position: 'relative', zIndex: 1, fontWeight: 900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, flexShrink: 1 }}>Simulate Day</span>
+                    {filledCount > 0 && (
+                      <span style={{ position: 'relative', zIndex: 1, background: 'rgba(0,0,0,0.25)', borderRadius: 6, padding: '2px 7px', fontSize: 11, fontWeight: 900, flexShrink: 0 }}>{filledCount}</span>
+                    )}
+                  </>
                 )}
               </motion.button>
             </div>
@@ -626,12 +637,12 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
                   {filledCount > 0 && (
                     <div style={{
                       flexShrink: 0,
-                      padding: compact ? '3px 8px' : '4px 10px',
+                      padding: compact ? '1px 7px' : '4px 10px',
                       borderRadius: 20,
                       background: 'rgba(0,212,177,0.1)',
                       border: '1px solid rgba(0,212,177,0.25)',
                     }}>
-                      <span style={{ fontSize: compact ? 10 : 12, fontWeight: 700, color: '#00d4b1', fontFamily: 'Space Grotesk' }}>
+                      <span style={{ fontSize: compact ? 9 : 12, fontWeight: 700, color: '#00d4b1', fontFamily: 'Space Grotesk' }}>
                         {filledCount} event{filledCount !== 1 ? 's' : ''}
                       </span>
                     </div>
