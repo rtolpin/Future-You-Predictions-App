@@ -11,7 +11,7 @@ const INSIGHT_MESSAGES = [
   'Weighing ripple effects…',
 ];
 
-export function SimulationLoadingScreen({ active, currentAction }) {
+export function SimulationLoadingScreen({ active, currentAction, title = 'Simulating Your Day' }) {
   const [insightIdx, setInsightIdx] = useState(0);
   const [progress, setProgress] = useState(0);
 
@@ -86,7 +86,7 @@ export function SimulationLoadingScreen({ active, currentAction }) {
                 animate={{ opacity: [0.85, 1, 0.85] }}
                 transition={{ duration: 2.5, repeat: Infinity }}
               >
-                Simulating Your Day
+                {title}
               </motion.h2>
               {currentAction && (
                 <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '6px 16px', borderRadius: 50, background: 'rgba(0,212,177,0.1)', border: '1px solid rgba(0,212,177,0.25)', color: '#00d4b1', fontSize: 13, fontWeight: 600, fontFamily: 'DM Sans' }}>

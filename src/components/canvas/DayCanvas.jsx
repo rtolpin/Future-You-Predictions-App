@@ -427,7 +427,7 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
                 <h3 style={{ fontFamily: 'Space Grotesk', fontWeight: 900, fontSize: compact ? 14 : 20, lineHeight: 1.2, background: 'linear-gradient(135deg, #00d4b1 0%, #a78bfa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', whiteSpace: 'nowrap' }}>{dayLabel}</h3>
               </div>
 
-            <div className="flex items-center" style={{ gap: 8, flexWrap: 'nowrap', flexShrink: 1, minWidth: 0, overflow: 'hidden' }}>
+            <div className="flex items-center" style={{ gap: 8, flexWrap: 'nowrap', flexShrink: 1, minWidth: 0, overflow: 'hidden', paddingRight: 6 }}>
               {/* AM/PM ↔ 24h toggle — hidden in compact mode */}
               {!compact && (
                 <div

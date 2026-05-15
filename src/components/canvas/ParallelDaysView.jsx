@@ -323,8 +323,9 @@ export function ParallelDaysView({ profile, count = 2, mood, outfits, onTreeData
               {timelines.map((timeline, i) => {
                 const cfg = DAY_CONFIGS[i];
                 const rgb = cfg.color.replace('#','').match(/.{2}/g).map(x=>parseInt(x,16)).join(',');
+                const hasPrediction = !!dayPredictions[i];
                 return (
-                  <div key={i} style={{ flex: 1, display: 'flex', justifyContent: 'center', padding: '10px 12px', borderLeft: i > 0 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
+                  <div key={i} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 12px', borderLeft: i > 0 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
                     <motion.button
                       onClick={() => setQuickAddPath(i)}
                       whileHover={{ scale: 1.05, boxShadow: `0 0 18px rgba(${rgb},0.5)` }}
@@ -342,6 +343,31 @@ export function ParallelDaysView({ profile, count = 2, mood, outfits, onTreeData
                       <Plus size={13} />
                       Quick Add
                     </motion.button>
+
+                    {/* View AI Insights — shown once this path has been simulated */}
+                    <AnimatePresence>
+                      {hasPrediction && (
+                        <motion.button
+                          initial={{ opacity: 0, scale: 0.85 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.85 }}
+                          onClick={() => onShowFullscreen?.({ type: 'single', data: { prediction: dayPredictions[i], eventCount: timeline.events.length } })}
+                          whileHover={{ scale: 1.05, background: `rgba(${rgb},0.25)`, boxShadow: `0 0 16px rgba(${rgb},0.45)` }}
+                          whileTap={{ scale: 0.95 }}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 6,
+                            padding: '7px 14px', borderRadius: 99,
+                            background: `rgba(${rgb},0.1)`,
+                            border: `1.5px solid rgba(${rgb},0.4)`,
+                            color: cfg.color, fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: 12,
+                            cursor: 'pointer', whiteSpace: 'nowrap',
+                          }}
+                        >
+                          <Sparkles size={12} />
+                          AI Insights
+                        </motion.button>
+                      )}
+                    </AnimatePresence>
                   </div>
                 );
               })}
@@ -457,7 +483,7 @@ export function ParallelDaysView({ profile, count = 2, mood, outfits, onTreeData
       </DndContext>
 
       {/* Loading overlay */}
-      <SimulationLoadingScreen active={simProgress.active} currentAction={simProgress.currentAction} />
+      <SimulationLoadingScreen active={simProgress.active} currentAction={simProgress.currentAction} title={simProgress.currentAction?.includes('comparing') ? 'Comparing Your Days' : 'Simulating Your Day'} />
 
       {/* Quick Add modal */}
       <AnimatePresence>
