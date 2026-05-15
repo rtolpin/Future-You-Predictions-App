@@ -900,17 +900,20 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
       document.body
     )}
 
-    {/* Event detail modal */}
-    <AnimatePresence>
-      {editingEvent && (
-        <EventDetailModal
-          event={editingEvent}
-          onClose={() => setEditingEvent(null)}
-          onSave={(eventId, details) => timeline.updateDetails(eventId, details)}
-          onRemove={(eventId) => { timeline.removeEvent(eventId); setEditingEvent(null); }}
-        />
-      )}
-    </AnimatePresence>
+    {/* Event detail modal — portal so it escapes main's z-10 stacking context */}
+    {createPortal(
+      <AnimatePresence>
+        {editingEvent && (
+          <EventDetailModal
+            event={editingEvent}
+            onClose={() => setEditingEvent(null)}
+            onSave={(eventId, details) => timeline.updateDetails(eventId, details)}
+            onRemove={(eventId) => { timeline.removeEvent(eventId); setEditingEvent(null); }}
+          />
+        )}
+      </AnimatePresence>,
+      document.body
+    )}
 
     {/* Mood picker modal */}
     <AnimatePresence>

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { X, MapPin, AlignLeft, Clock, Save, Sun, Check, Trash2 } from 'lucide-react';
 import { CATEGORY_META } from '../../data/decisionCards.js';
 import { minutesToLabel } from '../../hooks/useTimeline.js';
@@ -40,95 +40,53 @@ function formatDuration(mins) {
   return `${h}h ${m}m`;
 }
 
-// Convert total minutes to { hour12, hour24, minute, period }
-function minutesToParts(total) {
-  const h24 = Math.floor(total / 60) % 24;
-  const min = total % 60;
-  const period = h24 < 12 ? 'AM' : 'PM';
-  const h12 = h24 === 0 ? 12 : h24 > 12 ? h24 - 12 : h24;
-  return { h24, h12, min, period };
+function minsToTimeValue(totalMinutes) {
+  const safe = totalMinutes || 0;
+  const h = Math.floor(safe / 60) % 24;
+  const m = safe % 60;
+  return `${pad(h)}:${pad(m)}`;
 }
 
-function partsToMinutes(h, min, period, use24) {
-  let h24 = h;
-  if (!use24) {
-    if (period === 'AM' && h === 12) h24 = 0;
-    else if (period === 'PM' && h !== 12) h24 = h + 12;
-    else h24 = h;
-  }
-  return h24 * 60 + min;
-}
+function TimePicker({ label, totalMinutes, onChange, color, rgb }) {
+  const [inputVal, setInputVal] = useState(minsToTimeValue(totalMinutes));
 
-const HOURS_12 = Array.from({ length: 12 }, (_, i) => i + 1);
-const HOURS_24 = Array.from({ length: 24 }, (_, i) => i);
-const MINUTES  = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
+  useEffect(() => {
+    setInputVal(minsToTimeValue(totalMinutes));
+  }, [totalMinutes]);
 
-function TimePicker({ label, totalMinutes, onChange, color, rgb, use24 }) {
-  const { h24, h12, min, period } = minutesToParts(totalMinutes);
-
-  const setHour = (h) => onChange(partsToMinutes(h, min, period, use24));
-  const setMin  = (m) => onChange(partsToMinutes(use24 ? h24 : h12, m, period, use24));
-  const setPeriod = (p) => {
-    let newH24 = h24;
-    if (p === 'AM' && h24 >= 12) newH24 = h24 - 12;
-    if (p === 'PM' && h24 < 12)  newH24 = h24 + 12;
-    onChange(newH24 * 60 + min);
-  };
-
-  const selStyle = {
-    background: 'rgba(255,255,255,0.07)',
-    border: `1.5px solid rgba(${rgb},0.3)`,
-    borderRadius: 10,
-    color: '#f1f5f9',
-    fontFamily: 'JetBrains Mono, monospace',
-    fontSize: 15,
-    fontWeight: 700,
-    padding: '11px 12px',
-    outline: 'none',
-    cursor: 'pointer',
-    colorScheme: 'dark',
+  const handleChange = (e) => {
+    setInputVal(e.target.value);
+    if (e.target.value) {
+      const [h, m] = e.target.value.split(':').map(Number);
+      if (!isNaN(h) && !isNaN(m)) onChange(h * 60 + m);
+    }
   };
 
   return (
     <div>
       <p style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', fontFamily: 'Space Grotesk', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>{label}</p>
-      <div style={{ display: 'flex', alignItems: 'stretch', gap: 6 }}>
-        {/* Hour */}
-        <select value={use24 ? h24 : h12} onChange={e => setHour(Number(e.target.value))} style={{ ...selStyle, flex: 1 }}>
-          {(use24 ? HOURS_24 : HOURS_12).map(h => (
-            <option key={h} value={h} style={{ background: '#0d0d1a' }}>{use24 ? pad(h) : h}</option>
-          ))}
-        </select>
-        <span style={{ color, fontWeight: 900, fontSize: 18, fontFamily: 'JetBrains Mono', display: 'flex', alignItems: 'center' }}>:</span>
-        {/* Minute */}
-        <select value={min} onChange={e => setMin(Number(e.target.value))} style={{ ...selStyle, flex: 1 }}>
-          {MINUTES.map(m => (
-            <option key={m} value={m} style={{ background: '#0d0d1a' }}>{pad(m)}</option>
-          ))}
-        </select>
-        {/* AM/PM */}
-        {!use24 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            {['AM', 'PM'].map(p => (
-              <motion.button
-                key={p}
-                onClick={() => setPeriod(p)}
-                whileTap={{ scale: 0.94 }}
-                style={{
-                  flex: 1, padding: '0 12px', borderRadius: 7, fontSize: 11, fontWeight: 800,
-                  cursor: 'pointer', fontFamily: 'Space Grotesk',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: period === p ? `rgba(${rgb},0.25)` : 'rgba(255,255,255,0.05)',
-                  border: `1.5px solid ${period === p ? color : 'rgba(255,255,255,0.08)'}`,
-                  color: period === p ? color : '#475569',
-                }}
-              >
-                {p}
-              </motion.button>
-            ))}
-          </div>
-        )}
-      </div>
+      <input
+        type="time"
+        value={inputVal}
+        step={900}
+        onChange={handleChange}
+        style={{
+          width: '100%',
+          background: 'rgba(255,255,255,0.06)',
+          border: `1.5px solid rgba(${rgb},0.35)`,
+          borderRadius: 12,
+          color: '#f1f5f9',
+          fontFamily: 'JetBrains Mono, monospace',
+          fontSize: 16,
+          fontWeight: 700,
+          padding: '12px 14px',
+          outline: 'none',
+          cursor: 'pointer',
+          colorScheme: 'dark',
+          boxSizing: 'border-box',
+          boxShadow: `inset 0 0 0 1px rgba(${rgb},0.08)`,
+        }}
+      />
     </div>
   );
 }
@@ -142,7 +100,6 @@ export function EventDetailModal({ event, onSave, onClose, onRemove }) {
   const [endMins,     setEndMins]     = useState(event.startMinutes + event.durationMinutes);
   const [allDay,      setAllDay]      = useState(event.allDay || false);
   const [customColor, setCustomColor] = useState(event.customColor || null);
-  const [use24,       setUse24]       = useState(false);
 
   const meta  = CATEGORY_META[event.card.category];
   const color = customColor || meta.color;
@@ -292,88 +249,65 @@ export function EventDetailModal({ event, onSave, onClose, onRemove }) {
             </div>
           </div>
 
-          {/* All Day + Time Format toggles */}
-          <div style={{ display: 'flex', gap: 10 }}>
-            {/* All Day */}
-            <motion.button
-              onClick={() => setAllDay(a => !a)}
-              whileTap={{ scale: 0.96 }}
-              style={{
-                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                padding: '10px 14px', borderRadius: 12, cursor: 'pointer', fontFamily: 'Space Grotesk', fontSize: 13, fontWeight: 700,
-                background: allDay ? `rgba(${rgb},0.2)` : 'rgba(255,255,255,0.05)',
-                border: `1.5px solid ${allDay ? color : 'rgba(255,255,255,0.1)'}`,
-                color: allDay ? color : '#64748b',
-                boxShadow: allDay ? `0 0 14px rgba(${rgb},0.25)` : 'none',
-              }}
-            >
-              <Sun size={14} /> All Day
-              <div style={{
-                width: 34, height: 18, borderRadius: 9,
-                background: allDay ? color : 'rgba(255,255,255,0.12)',
-                position: 'relative', transition: 'background 0.2s',
-              }}>
-                <motion.div animate={{ left: allDay ? 18 : 2 }} transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                  style={{ position: 'absolute', top: 2, width: 14, height: 14, borderRadius: '50%', background: '#fff' }}
-                />
-              </div>
-            </motion.button>
+          {/* All Day toggle */}
+          <motion.button
+            onClick={() => setAllDay(a => !a)}
+            whileTap={{ scale: 0.96 }}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              padding: '10px 14px', borderRadius: 12, cursor: 'pointer', fontFamily: 'Space Grotesk', fontSize: 13, fontWeight: 700,
+              background: allDay ? `rgba(${rgb},0.2)` : 'rgba(255,255,255,0.05)',
+              border: `1.5px solid ${allDay ? color : 'rgba(255,255,255,0.1)'}`,
+              color: allDay ? color : '#64748b',
+              boxShadow: allDay ? `0 0 14px rgba(${rgb},0.25)` : 'none',
+            }}
+          >
+            <Sun size={14} /> All Day
+            <div style={{
+              width: 34, height: 18, borderRadius: 9,
+              background: allDay ? color : 'rgba(255,255,255,0.12)',
+              position: 'relative', transition: 'background 0.2s',
+            }}>
+              <motion.div animate={{ left: allDay ? 18 : 2 }} transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                style={{ position: 'absolute', top: 2, width: 14, height: 14, borderRadius: '50%', background: '#fff' }}
+              />
+            </div>
+          </motion.button>
 
-            {/* 12h / 24h toggle */}
-            <motion.button
-              onClick={() => setUse24(u => !u)}
-              whileTap={{ scale: 0.96 }}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                padding: '10px 16px', borderRadius: 12, cursor: 'pointer', fontFamily: 'JetBrains Mono', fontSize: 12, fontWeight: 700,
-                background: use24 ? 'rgba(167,139,250,0.18)' : 'rgba(255,255,255,0.05)',
-                border: `1.5px solid ${use24 ? '#a78bfa' : 'rgba(255,255,255,0.1)'}`,
-                color: use24 ? '#a78bfa' : '#64748b',
-              }}
-            >
-              {use24 ? '24h' : '12h'}
-            </motion.button>
+          {/* Time pickers — CSS transition avoids Framer Motion height:auto measurement failures */}
+          <div style={{
+            overflow: 'hidden',
+            maxHeight: allDay ? 0 : 400,
+            opacity: allDay ? 0 : 1,
+            transition: 'max-height 0.25s ease, opacity 0.2s ease',
+          }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 12, alignItems: 'end' }}>
+              <TimePicker label="Start Time" totalMinutes={startMins} onChange={setStartMins} color={color} rgb={rgb} />
+              <div style={{ paddingBottom: 10, fontSize: 20, color: '#475569', fontWeight: 900, textAlign: 'center' }}>➔</div>
+              <TimePicker label="End Time"   totalMinutes={endMins}   onChange={setEndMins}   color={color} rgb={rgb} />
+            </div>
+
+            {/* Duration summary */}
+            <div style={{
+              marginTop: 12, display: 'flex', alignItems: 'center', gap: 8,
+              padding: '10px 14px', borderRadius: 12,
+              background: endBeforeStart ? 'rgba(248,113,113,0.1)' : `rgba(${rgb},0.08)`,
+              border: `1px solid ${endBeforeStart ? 'rgba(248,113,113,0.3)' : `rgba(${rgb},0.2)`}`,
+            }}>
+              <Clock size={13} color={endBeforeStart ? '#f87171' : color} />
+              {endBeforeStart ? (
+                <span style={{ fontSize: 12, color: '#f87171', fontFamily: 'DM Sans' }}>End time must be after start time</span>
+              ) : (
+                <>
+                  <span style={{ fontSize: 12, color: '#94a3b8', fontFamily: 'DM Sans' }}>Duration:</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color, fontFamily: 'JetBrains Mono' }}>{formatDuration(duration)}</span>
+                  <span style={{ fontSize: 12, color: '#475569', fontFamily: 'DM Sans', marginLeft: 'auto' }}>
+                    ends {minutesToLabel(endMins)}
+                  </span>
+                </>
+              )}
+            </div>
           </div>
-
-          {/* Time pickers */}
-          <AnimatePresence>
-            {!allDay && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                style={{ overflow: 'hidden' }}
-              >
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 12, alignItems: 'end' }}>
-                  <TimePicker label="Start Time" totalMinutes={startMins} onChange={setStartMins} color={color} rgb={rgb} use24={use24} />
-                  {/* Arrow between pickers */}
-                  <div style={{ paddingBottom: 10, fontSize: 20, color: '#475569', fontWeight: 900, textAlign: 'center' }}>➔</div>
-                  <TimePicker label="End Time"   totalMinutes={endMins}   onChange={setEndMins}   color={color} rgb={rgb} use24={use24} />
-                </div>
-
-                {/* Duration summary */}
-                <div style={{
-                  marginTop: 12, display: 'flex', alignItems: 'center', gap: 8,
-                  padding: '10px 14px', borderRadius: 12,
-                  background: endBeforeStart ? 'rgba(248,113,113,0.1)' : `rgba(${rgb},0.08)`,
-                  border: `1px solid ${endBeforeStart ? 'rgba(248,113,113,0.3)' : `rgba(${rgb},0.2)`}`,
-                }}>
-                  <Clock size={13} color={endBeforeStart ? '#f87171' : color} />
-                  {endBeforeStart ? (
-                    <span style={{ fontSize: 12, color: '#f87171', fontFamily: 'DM Sans' }}>End time must be after start time</span>
-                  ) : (
-                    <>
-                      <span style={{ fontSize: 12, color: '#94a3b8', fontFamily: 'DM Sans' }}>Duration:</span>
-                      <span style={{ fontSize: 13, fontWeight: 700, color, fontFamily: 'JetBrains Mono' }}>{formatDuration(duration)}</span>
-                      <span style={{ fontSize: 12, color: '#475569', fontFamily: 'DM Sans', marginLeft: 'auto' }}>
-                        ends {minutesToLabel(endMins)}
-                      </span>
-                    </>
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
 
           </div>{/* end LEFT COLUMN */}
 
