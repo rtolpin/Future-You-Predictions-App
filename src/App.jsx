@@ -344,7 +344,11 @@ export default function App() {
 
   const handleMinimizeFullscreen = useCallback((closeFn) => {
     setBackTransitioning(true);
-    setTimeout(() => closeFn(), 200);
+    setTimeout(() => {
+      closeFn();
+      setRightPanelTab('predictions');
+      setPredictionOpen(true);
+    }, 200);
     setTimeout(() => setBackTransitioning(false), 620);
   }, []);
 
