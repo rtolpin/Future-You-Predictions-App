@@ -346,15 +346,19 @@ export default function App() {
   const [showAuth, setShowAuth] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [checkedGoals, setCheckedGoals] = useState(() => {
-    try { return new Set(JSON.parse(localStorage.getItem('future-you-checked-goals')) || []); }
-    catch { return new Set(); }
+    try {
+      const acct = JSON.parse(localStorage.getItem('future-you-account'));
+      if (!acct) return new Set();
+      return new Set(JSON.parse(localStorage.getItem('future-you-checked-goals')) || []);
+    } catch { return new Set(); }
   });
 
   const toggleCheckedGoal = useCallback((id) => {
     setCheckedGoals(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id); else next.add(id);
-      localStorage.setItem('future-you-checked-goals', JSON.stringify([...next]));
+      const acct = JSON.parse(localStorage.getItem('future-you-account') || 'null');
+      if (acct) localStorage.setItem('future-you-checked-goals', JSON.stringify([...next]));
       return next;
     });
   }, []);
@@ -362,7 +366,11 @@ export default function App() {
   const [rightPanelTab, setRightPanelTab] = useState('predictions'); // 'predictions' | 'goals'
 
   const [goals, setGoals] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('future-you-goals')) || []; } catch { return []; }
+    try {
+      const acct = JSON.parse(localStorage.getItem('future-you-account'));
+      if (!acct) return [];
+      return JSON.parse(localStorage.getItem('future-you-goals')) || [];
+    } catch { return []; }
   });
   const [showGoals, setShowGoals] = useState(false);
   const [showRetrospective, setShowRetrospective] = useState(false);
@@ -370,9 +378,9 @@ export default function App() {
   const [summaryResult, setSummaryResult]         = useState(null);
 
   const handleGoalsChange = useCallback((updated) => {
-    localStorage.setItem('future-you-goals', JSON.stringify(updated));
+    if (account) localStorage.setItem('future-you-goals', JSON.stringify(updated));
     setGoals(updated);
-  }, []);
+  }, [account]);
   const [saveStatus, setSaveStatus] = useState(null); // 'saving'|'saved'|'error'
   const [simProgress, setSimProgress] = useState({ active: false, current: 0, total: 0, currentAction: '' });
 
@@ -387,7 +395,11 @@ export default function App() {
   const handleLogout = useCallback(() => {
     localStorage.removeItem('future-you-token');
     localStorage.removeItem('future-you-account');
+    localStorage.removeItem('future-you-goals');
+    localStorage.removeItem('future-you-checked-goals');
     setAccount(null);
+    setGoals([]);
+    setCheckedGoals(new Set());
   }, []);
 
   const handleSaveDay = useCallback(async () => {
