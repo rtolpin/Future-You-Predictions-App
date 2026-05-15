@@ -866,7 +866,7 @@ export default function App() {
                   onSimulateAll={handleSimulateAll}
                   onSelectEvent={handleSelectEvent}
                   selectedEventId={selectedEventId}
-                  dayLabel={profile.name ? `${profile.name}'s Day` : 'My Day'}
+                  dayLabel={(() => { const n = account?.name?.split(' ')[0] || profile.name; return n ? `${n}'s Day` : 'My Day'; })()}
                   selectedOutfits={selectedOutfits}
                   onOutfitsChange={setSelectedOutfits}
                   selectedMood={selectedMood}
