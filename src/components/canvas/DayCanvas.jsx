@@ -472,13 +472,22 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
               {!compact && (
                 <motion.button
                   onClick={() => setFullscreen(f => !f)}
-                  whileHover={{ scale: 1.05, background: 'rgba(255,255,255,0.08)' }}
+                  whileHover={{ scale: 1.05, background: 'rgba(0,212,177,0.18)', borderColor: 'rgba(0,212,177,0.6)', boxShadow: '0 0 16px rgba(0,212,177,0.3)' }}
                   whileTap={{ scale: 0.95 }}
                   title={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-                  className="flex items-center justify-center text-slate-400 transition-all cursor-pointer"
-                  style={{ width: 34, height: 34, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10 }}
+                  className="flex items-center cursor-pointer"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '7px 13px', borderRadius: 10,
+                    background: 'rgba(0,212,177,0.08)',
+                    border: '1.5px solid rgba(0,212,177,0.35)',
+                    color: '#00d4b1',
+                    fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: 12,
+                    transition: 'all 0.15s ease',
+                  }}
                 >
-                  {fullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                  {fullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+                  {fullscreen ? 'Exit' : 'Full Screen'}
                 </motion.button>
               )}
 
