@@ -30,6 +30,11 @@ export const profileClient = {
   save: (profile) => req('PUT', '/profile', { profile }),
 };
 
+export const goalsClient = {
+  load: ()      => req('GET', '/profile/goals'),
+  save: (goals) => req('PUT', '/profile/goals', { goals }),
+};
+
 export const daysClient = {
   list:   ()        => req('GET',    '/days'),
   get:    (id)      => req('GET',    `/days/${id}`),

@@ -44,7 +44,8 @@ db.exec(`
   );
 `);
 
-// Add profile column to users if it doesn't exist yet
+// Add profile and goals columns to users if they don't exist yet
 try { db.exec(`ALTER TABLE users ADD COLUMN profile TEXT`); } catch {}
+try { db.exec(`ALTER TABLE users ADD COLUMN goals TEXT`); } catch {}
 
 export default db;

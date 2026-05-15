@@ -21,7 +21,7 @@ import { DayGoals } from './components/goals/DayGoals.jsx';
 import { DayRetrospective } from './components/goals/DayRetrospective.jsx';
 import { useTimeline, minutesToLabel } from './hooks/useTimeline.js';
 import { simulateDecision, simulateDayFlow } from './utils/claudeClient.js';
-import { authClient, daysClient, profileClient } from './utils/accountClient.js';
+import { authClient, daysClient, profileClient, goalsClient } from './utils/accountClient.js';
 import { SimulationLoadingScreen } from './components/simulation/SimulationLoadingScreen.jsx';
 import { TransitionScreen } from './components/simulation/TransitionScreen.jsx';
 
@@ -392,8 +392,15 @@ export default function App() {
   const [summaryResult, setSummaryResult]         = useState(null);
 
   const handleGoalsChange = useCallback((updated) => {
-    if (account) localStorage.setItem('future-you-goals', JSON.stringify(updated));
+    if (account) {
+      localStorage.setItem('future-you-goals', JSON.stringify(updated));
+      goalsClient.save(updated).catch(() => {});
+    }
     setGoals(updated);
+    if (updated.length > 0) {
+      setRightPanelTab('goals');
+      setPredictionOpen(true);
+    }
   }, [account]);
   const [saveStatus, setSaveStatus] = useState(null); // 'saving'|'saved'|'error'
   const [simProgress, setSimProgress] = useState({ active: false, current: 0, total: 0, currentAction: '' });
@@ -413,6 +420,13 @@ export default function App() {
       }
       // No backend profile yet — leave local profile untouched.
       // User can open Identity Panel and Save to persist it for future sign-ins.
+
+      // Load goals from backend
+      const { goals: backendGoals } = await goalsClient.load().catch(() => ({ goals: null }));
+      if (backendGoals) {
+        localStorage.setItem('future-you-goals', JSON.stringify(backendGoals));
+        setGoals(backendGoals);
+      }
     } catch { /* silently ignore */ }
   }, []);
 
