@@ -423,93 +423,20 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
         <div className="flex-1 flex flex-col overflow-hidden">
 
           {/* Header bar */}
-          <div
-            className="flex items-center justify-between shrink-0"
-            style={{ padding: compact ? '10px 14px' : '14px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.15)', flexWrap: compact ? 'wrap' : 'nowrap', gap: compact ? 8 : 0 }}
-          >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div className="shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.15)' }}>
+
+            {/* Row 1: My Day centered + right controls */}
+            <div className="flex items-center" style={{ padding: compact ? '10px 14px 6px' : '14px 20px 8px', gap: 8 }}>
+              {/* My Day title — centered within remaining space */}
+              <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10 }}>
                 <div className="relative" style={{ width: 18, height: 18, flexShrink: 0 }}>
                   <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#00d4b1', boxShadow: '0 0 12px rgba(0,212,177,0.8), 0 0 24px rgba(0,212,177,0.4)' }} />
                   <div className="absolute inset-0 rounded-full animate-ping" style={{ background: '#00d4b1', opacity: 0.35 }} />
                 </div>
-                <h3 style={{ fontFamily: 'Space Grotesk', fontWeight: 900, fontSize: compact ? 14 : 20, lineHeight: 1.2, background: 'linear-gradient(135deg, #00d4b1 0%, #a78bfa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>{dayLabel}</h3>
+                <h3 style={{ fontFamily: 'Space Grotesk', fontWeight: 900, fontSize: compact ? 14 : 20, lineHeight: 1.2, background: 'linear-gradient(135deg, #00d4b1 0%, #a78bfa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', whiteSpace: 'nowrap' }}>{dayLabel}</h3>
               </div>
-              {!compact && <div style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 8,
-                  marginTop: 6, padding: '6px 10px', borderRadius: 10,
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-                }}>
-                  <span style={{ fontSize: 12, fontWeight: 800, color: '#94a3b8', fontFamily: 'Space Grotesk', textTransform: 'uppercase', letterSpacing: '0.07em', whiteSpace: 'nowrap' }}>⏱ Day Duration</span>
-                  <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.1)' }} />
-                  {/* Start hour */}
-                  {(() => {
-                    const decStart = useHoldButton(() => setStartHour(h => Math.max(0, h - 1)));
-                    const incStart = useHoldButton(() => {
-                      setStartHour(h => {
-                        const next = Math.min(endHour - 1, h + 1);
-                        // If bumping start would equal end, push end up too
-                        if (next >= endHour) setEndHour(e => Math.min(24, e + 1));
-                        return next;
-                      });
-                    });
-                    return (
-                      <div className="flex items-center" style={{ gap: 4 }}>
-                        <button {...decStart} style={{ fontSize: 13, color: '#00d4b1', cursor: 'pointer', background: 'rgba(0,212,177,0.15)', border: '1px solid rgba(0,212,177,0.3)', borderRadius: 6, width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, userSelect: 'none' }}>−</button>
-                        <span style={{ fontSize: 12, color: '#00d4b1', fontFamily: 'JetBrains Mono', fontWeight: 700, minWidth: 38, textAlign: 'center' }}>{fmtHour(startHour)}</span>
-                        <button {...incStart} style={{ fontSize: 13, color: '#00d4b1', cursor: 'pointer', background: 'rgba(0,212,177,0.15)', border: '1px solid rgba(0,212,177,0.3)', borderRadius: 6, width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, userSelect: 'none' }}>+</button>
-                      </div>
-                    );
-                  })()}
-                  <span style={{ fontSize: 16, color: '#94a3b8', fontWeight: 900, lineHeight: 1 }}>➔</span>
-                  {/* End hour */}
-                  {(() => {
-                    const decEnd = useHoldButton(() => setEndHour(h => Math.max(startHour + 1, h - 1)));
-                    const incEnd = useHoldButton(() => setEndHour(h => Math.min(24, h + 1)));
-                    return (
-                      <div className="flex items-center" style={{ gap: 4 }}>
-                        <button {...decEnd} style={{ fontSize: 13, color: '#f59e0b', cursor: 'pointer', background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 6, width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, userSelect: 'none' }}>−</button>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <span style={{ fontSize: 12, color: '#f59e0b', fontFamily: 'JetBrains Mono', fontWeight: 700, minWidth: 38, textAlign: 'center' }}>{fmtHour(endHour)}</span>
-                            </div>
-                        <button {...incEnd} style={{ fontSize: 13, color: '#f59e0b', cursor: 'pointer', background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 6, width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, userSelect: 'none' }}>+</button>
-                      </div>
-                    );
-                  })()}
-                  {filledCount > 0 && (
-                    <>
-                      <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.15)' }} />
-                      <span style={{ fontSize: 11, fontWeight: 800, color: '#e2e8f0', fontFamily: 'Space Grotesk' }}>
-                        {filledCount} event{filledCount !== 1 ? 's' : ''}
-                      </span>
-                    </>
-                  )}
-                </div>}
-                {compact && (
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
-                    {(() => {
-                      const decStart = useHoldButton(() => setStartHour(h => Math.max(0, h - 1)));
-                      const incStart = useHoldButton(() => setStartHour(h => { const n = Math.min(endHour - 1, h + 1); if (n >= endHour) setEndHour(e => Math.min(24, e + 1)); return n; }));
-                      const decEnd = useHoldButton(() => setEndHour(h => Math.max(startHour + 1, h - 1)));
-                      const incEnd = useHoldButton(() => setEndHour(h => Math.min(24, h + 1)));
-                      const btnStyle = (col) => ({ fontSize: 11, color: col, cursor: 'pointer', background: `rgba(${col === '#00d4b1' ? '0,212,177' : '245,158,11'},0.15)`, border: `1px solid ${col}44`, borderRadius: 5, width: 17, height: 17, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, userSelect: 'none' });
-                      return (<>
-                        <button {...decStart} style={btnStyle('#00d4b1')}>−</button>
-                        <span style={{ fontSize: 10, color: '#00d4b1', fontFamily: 'JetBrains Mono', fontWeight: 700, minWidth: 30, textAlign: 'center' }}>{fmtHour(startHour)}</span>
-                        <button {...incStart} style={btnStyle('#00d4b1')}>+</button>
-                        <span style={{ fontSize: 11, color: '#475569' }}>→</span>
-                        <button {...decEnd} style={btnStyle('#f59e0b')}>−</button>
-                        <span style={{ fontSize: 10, color: '#f59e0b', fontFamily: 'JetBrains Mono', fontWeight: 700, minWidth: 30, textAlign: 'center' }}>{fmtHour(endHour)}</span>
-                        <button {...incEnd} style={btnStyle('#f59e0b')}>+</button>
-                      </>);
-                    })()}
-                  </div>
-                )}
-            </div>
 
-            <div className="flex items-center" style={{ gap: 8, flexWrap: 'wrap' }}>
+            <div className="flex items-center" style={{ gap: 8, flexWrap: 'nowrap', flexShrink: 1, minWidth: 0, overflow: 'hidden' }}>
               {/* AM/PM ↔ 24h toggle — hidden in compact mode */}
               {!compact && (
                 <div
@@ -588,7 +515,7 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
                   boxShadow: filledCount > 0 ? `0 0 20px ${dayColor}77, inset 0 1px 0 rgba(255,255,255,0.3)` : 'none',
                   borderRadius: 16, fontSize: compact ? 12 : 15, fontFamily: 'Space Grotesk',
                   border: '1px solid rgba(255,255,255,0.25)',
-                  whiteSpace: 'nowrap',
+                  flexShrink: 1, minWidth: 0,
                 }}
                 animate={filledCount > 0 ? { boxShadow: [`0 0 16px ${dayColor}55`, `0 0 28px ${dayColor}99`, `0 0 16px ${dayColor}55`] } : {}}
                 transition={filledCount > 0 ? { duration: 2, repeat: Infinity, ease: 'easeInOut' } : {}}
@@ -602,14 +529,78 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
                     transition={{ duration: 2, repeat: Infinity, ease: 'linear', repeatDelay: 1.2 }}
                   />
                 )}
-                <Play size={compact ? 12 : 15} fill="currentColor" style={{ position: 'relative', zIndex: 1 }} />
-                <span style={{ position: 'relative', zIndex: 1, fontWeight: 900 }}>Simulate Day</span>
+                <Play size={compact ? 12 : 15} fill="currentColor" style={{ position: 'relative', zIndex: 1, flexShrink: 0 }} />
+                <span style={{ position: 'relative', zIndex: 1, fontWeight: 900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, flexShrink: 1 }}>Simulate Day</span>
                 {filledCount > 0 && (
-                  <span style={{ position: 'relative', zIndex: 1, background: 'rgba(0,0,0,0.25)', borderRadius: 6, padding: '2px 7px', fontSize: 11, fontWeight: 900 }}>{filledCount}</span>
+                  <span style={{ position: 'relative', zIndex: 1, background: 'rgba(0,0,0,0.25)', borderRadius: 6, padding: '2px 7px', fontSize: 11, fontWeight: 900, flexShrink: 0 }}>{filledCount}</span>
                 )}
               </motion.button>
             </div>
-          </div>
+            </div>{/* end Row 1 */}
+
+            {/* Row 2: Day Duration */}
+            {!compact && (
+              <div style={{ padding: '0 20px 10px', display: 'flex' }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: '#94a3b8', fontFamily: 'Space Grotesk', textTransform: 'uppercase', letterSpacing: '0.07em', whiteSpace: 'nowrap' }}>⏱ Day Duration</span>
+                  <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.1)' }} />
+                  {(() => {
+                    const decStart = useHoldButton(() => setStartHour(h => Math.max(0, h - 1)));
+                    const incStart = useHoldButton(() => { setStartHour(h => { const next = Math.min(endHour - 1, h + 1); if (next >= endHour) setEndHour(e => Math.min(24, e + 1)); return next; }); });
+                    return (
+                      <div className="flex items-center" style={{ gap: 4 }}>
+                        <button {...decStart} style={{ fontSize: 13, color: '#00d4b1', cursor: 'pointer', background: 'rgba(0,212,177,0.15)', border: '1px solid rgba(0,212,177,0.3)', borderRadius: 6, width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, userSelect: 'none' }}>−</button>
+                        <span style={{ fontSize: 12, color: '#00d4b1', fontFamily: 'JetBrains Mono', fontWeight: 700, minWidth: 38, textAlign: 'center' }}>{fmtHour(startHour)}</span>
+                        <button {...incStart} style={{ fontSize: 13, color: '#00d4b1', cursor: 'pointer', background: 'rgba(0,212,177,0.15)', border: '1px solid rgba(0,212,177,0.3)', borderRadius: 6, width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, userSelect: 'none' }}>+</button>
+                      </div>
+                    );
+                  })()}
+                  <span style={{ fontSize: 16, color: '#94a3b8', fontWeight: 900, lineHeight: 1 }}>➔</span>
+                  {(() => {
+                    const decEnd = useHoldButton(() => setEndHour(h => Math.max(startHour + 1, h - 1)));
+                    const incEnd = useHoldButton(() => setEndHour(h => Math.min(24, h + 1)));
+                    return (
+                      <div className="flex items-center" style={{ gap: 4 }}>
+                        <button {...decEnd} style={{ fontSize: 13, color: '#f59e0b', cursor: 'pointer', background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 6, width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, userSelect: 'none' }}>−</button>
+                        <span style={{ fontSize: 12, color: '#f59e0b', fontFamily: 'JetBrains Mono', fontWeight: 700, minWidth: 38, textAlign: 'center' }}>{fmtHour(endHour)}</span>
+                        <button {...incEnd} style={{ fontSize: 13, color: '#f59e0b', cursor: 'pointer', background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 6, width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, userSelect: 'none' }}>+</button>
+                      </div>
+                    );
+                  })()}
+                  {filledCount > 0 && (
+                    <>
+                      <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.15)' }} />
+                      <span style={{ fontSize: 11, fontWeight: 800, color: '#e2e8f0', fontFamily: 'Space Grotesk' }}>
+                        {filledCount} event{filledCount !== 1 ? 's' : ''}
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+            {compact && (
+              <div style={{ padding: '0 14px 8px', display: 'flex' }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  {(() => {
+                    const decStart = useHoldButton(() => setStartHour(h => Math.max(0, h - 1)));
+                    const incStart = useHoldButton(() => setStartHour(h => { const n = Math.min(endHour - 1, h + 1); if (n >= endHour) setEndHour(e => Math.min(24, e + 1)); return n; }));
+                    const decEnd = useHoldButton(() => setEndHour(h => Math.max(startHour + 1, h - 1)));
+                    const incEnd = useHoldButton(() => setEndHour(h => Math.min(24, h + 1)));
+                    const btnStyle = (col) => ({ fontSize: 11, color: col, cursor: 'pointer', background: `rgba(${col === '#00d4b1' ? '0,212,177' : '245,158,11'},0.15)`, border: `1px solid ${col}44`, borderRadius: 5, width: 17, height: 17, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, userSelect: 'none' });
+                    return (<>
+                      <button {...decStart} style={btnStyle('#00d4b1')}>−</button>
+                      <span style={{ fontSize: 10, color: '#00d4b1', fontFamily: 'JetBrains Mono', fontWeight: 700, minWidth: 30, textAlign: 'center' }}>{fmtHour(startHour)}</span>
+                      <button {...incStart} style={btnStyle('#00d4b1')}>+</button>
+                      <span style={{ fontSize: 11, color: '#475569' }}>→</span>
+                      <button {...decEnd} style={btnStyle('#f59e0b')}>−</button>
+                      <span style={{ fontSize: 10, color: '#f59e0b', fontFamily: 'JetBrains Mono', fontWeight: 700, minWidth: 30, textAlign: 'center' }}>{fmtHour(endHour)}</span>
+                      <button {...incEnd} style={btnStyle('#f59e0b')}>+</button>
+                    </>);
+                  })()}
+                </div>
+              </div>
+            )}
+          </div>{/* end header bar */}
 
 
           {!compact && !fullscreen && (
