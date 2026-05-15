@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { TransitionScreen } from '../simulation/TransitionScreen.jsx';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Zap, Maximize2, Minimize2, X, ChevronDown } from 'lucide-react';
 import { FutureScoreBar } from './FutureScoreBar.jsx';
@@ -9,12 +10,18 @@ const SCORE_COLOR = (s) => s >= 7 ? '#34d399' : s >= 4 ? '#fbbf24' : '#f87171';
 function RetroInsightsPanel({ result, onClear }) {
   const [open, setOpen] = useState(true);
   const [fullscreen, setFullscreen] = useState(false);
+  const [transitioning, setTransitioning] = useState(false);
+  const handleBack = useCallback(() => {
+    setTransitioning(true);
+    setTimeout(() => setFullscreen(false), 200);
+    setTimeout(() => setTransitioning(false), 620);
+  }, []);
   if (!result) return null;
 
   const scoreCol = SCORE_COLOR(result.overallScore ?? 5);
 
-  const fullscreenPortal = fullscreen && createPortal(
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+  const fullscreenPortal = (fullscreen || transitioning) && createPortal(
+    <><TransitionScreen active={transitioning} /><motion.div initial={{ opacity: 1 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       style={{ position: 'fixed', inset: 0, zIndex: 99999, background: '#09090f', display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 32px', borderBottom: '1px solid rgba(52,211,153,0.2)', background: 'rgba(52,211,153,0.05)', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -24,7 +31,7 @@ function RetroInsightsPanel({ result, onClear }) {
             {result.headline && <p style={{ fontSize: 12, color: '#475569', marginTop: 2 }}>{result.headline}</p>}
           </div>
         </div>
-        <motion.button onClick={() => setFullscreen(false)} whileHover={{ scale: 1.05, background: 'linear-gradient(135deg, #00d4b1, #00bfa0)', boxShadow: '0 0 28px rgba(0,212,177,0.7), 0 0 60px rgba(0,212,177,0.3)', borderColor: 'rgba(0,212,177,0.9)', color: '#000' }} whileTap={{ scale: 0.96 }}
+        <motion.button onClick={handleBack} whileHover={{ scale: 1.05, background: 'linear-gradient(135deg, #00d4b1, #00bfa0)', boxShadow: '0 0 28px rgba(0,212,177,0.7), 0 0 60px rgba(0,212,177,0.3)', borderColor: 'rgba(0,212,177,0.9)', color: '#000' }} whileTap={{ scale: 0.96 }}
           style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 12, border: '1.5px solid rgba(0,212,177,0.55)', background: 'linear-gradient(135deg, rgba(0,212,177,0.15), rgba(0,191,160,0.1))', cursor: 'pointer', color: '#00d4b1', fontFamily: 'Space Grotesk', fontSize: 13, fontWeight: 800, boxShadow: '0 0 12px rgba(0,212,177,0.25)', transition: 'all 0.15s ease' }}>
           <Minimize2 size={14} /> Back to Panel
         </motion.button>
@@ -58,7 +65,7 @@ function RetroInsightsPanel({ result, onClear }) {
           {result.closingMessage && <p style={{ fontSize: 15, color: '#475569', fontFamily: 'DM Sans', lineHeight: 1.75, fontStyle: 'italic', textAlign: 'center', padding: '8px 24px' }}>"{result.closingMessage}"</p>}
         </div>
       </div>
-    </motion.div>,
+    </motion.div></>,
     document.body
   );
 
@@ -155,12 +162,18 @@ function RetroInsightsPanel({ result, onClear }) {
 function DailySummaryInsightsPanel({ result, onClear }) {
   const [open, setOpen] = useState(true);
   const [fullscreen, setFullscreen] = useState(false);
+  const [transitioning, setTransitioning] = useState(false);
+  const handleBack = useCallback(() => {
+    setTransitioning(true);
+    setTimeout(() => setFullscreen(false), 200);
+    setTimeout(() => setTransitioning(false), 620);
+  }, []);
   if (!result) return null;
 
   const scoreCol = SCORE_COLOR(result.scores?.overall ?? 5);
 
-  const fullscreenPortal = fullscreen && createPortal(
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+  const fullscreenPortal = (fullscreen || transitioning) && createPortal(
+    <><TransitionScreen active={transitioning} /><motion.div initial={{ opacity: 1 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       style={{ position: 'fixed', inset: 0, zIndex: 99999, background: '#09090f', display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 32px', borderBottom: '1px solid rgba(245,158,11,0.2)', background: 'rgba(245,158,11,0.05)', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -170,7 +183,7 @@ function DailySummaryInsightsPanel({ result, onClear }) {
             {result.headline && <p style={{ fontSize: 12, color: '#475569', marginTop: 2 }}>{result.headline}</p>}
           </div>
         </div>
-        <motion.button onClick={() => setFullscreen(false)} whileHover={{ scale: 1.05, background: 'linear-gradient(135deg, #00d4b1, #00bfa0)', boxShadow: '0 0 28px rgba(0,212,177,0.7), 0 0 60px rgba(0,212,177,0.3)', borderColor: 'rgba(0,212,177,0.9)', color: '#000' }} whileTap={{ scale: 0.96 }}
+        <motion.button onClick={handleBack} whileHover={{ scale: 1.05, background: 'linear-gradient(135deg, #00d4b1, #00bfa0)', boxShadow: '0 0 28px rgba(0,212,177,0.7), 0 0 60px rgba(0,212,177,0.3)', borderColor: 'rgba(0,212,177,0.9)', color: '#000' }} whileTap={{ scale: 0.96 }}
           style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 12, border: '1.5px solid rgba(0,212,177,0.55)', background: 'linear-gradient(135deg, rgba(0,212,177,0.15), rgba(0,191,160,0.1))', cursor: 'pointer', color: '#00d4b1', fontFamily: 'Space Grotesk', fontSize: 13, fontWeight: 800, boxShadow: '0 0 12px rgba(0,212,177,0.25)', transition: 'all 0.15s ease' }}>
           <Minimize2 size={14} /> Back to Panel
         </motion.button>
@@ -205,7 +218,7 @@ function DailySummaryInsightsPanel({ result, onClear }) {
           )}
         </div>
       </div>
-    </motion.div>,
+    </motion.div></>,
     document.body
   );
 

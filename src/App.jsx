@@ -22,6 +22,7 @@ import { useTimeline, minutesToLabel } from './hooks/useTimeline.js';
 import { simulateDecision, simulateDayFlow } from './utils/claudeClient.js';
 import { authClient, daysClient } from './utils/accountClient.js';
 import { SimulationLoadingScreen } from './components/simulation/SimulationLoadingScreen.jsx';
+import { TransitionScreen } from './components/simulation/TransitionScreen.jsx';
 
 const VIEWS = {
   SINGLE: 'single',
@@ -73,13 +74,13 @@ function RightPanelGoals({ goals, checkedGoals, onToggle, onOpenGoalsModal }) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', padding: 24, textAlign: 'center' }}>
         <div style={{ fontSize: 36, marginBottom: 12 }}>🎯</div>
-        <p style={{ color: '#475569', fontSize: 13, fontFamily: 'DM Sans', lineHeight: 1.6, marginBottom: 16 }}>
+        <p style={{ color: '#94a3b8', fontSize: 15, fontFamily: 'Space Grotesk', fontWeight: 600, lineHeight: 1.6, marginBottom: 16 }}>
           No goals set for today.
         </p>
         <motion.button onClick={onOpenGoalsModal}
           whileHover={{ scale: 1.04, boxShadow: '0 0 18px rgba(0,212,177,0.3)' }} whileTap={{ scale: 0.97 }}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 10, border: '1.5px solid rgba(0,212,177,0.4)', background: 'rgba(0,212,177,0.1)', color: '#00d4b1', fontSize: 12, fontWeight: 700, fontFamily: 'Space Grotesk', cursor: 'pointer' }}>
-          <Target size={13} /> Set Goals
+          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 24px', borderRadius: 12, border: '1.5px solid rgba(0,212,177,0.5)', background: 'rgba(0,212,177,0.12)', color: '#00d4b1', fontSize: 15, fontWeight: 800, fontFamily: 'Space Grotesk', cursor: 'pointer', boxShadow: '0 0 12px rgba(0,212,177,0.15)' }}>
+          <Target size={16} /> Set Goals
         </motion.button>
       </div>
     );
@@ -339,6 +340,13 @@ export default function App() {
   const [dayPrediction, setDayPrediction] = useState(null);
   const [treeData, setTreeData] = useState(null);
   const [parallelFullscreen, setParallelFullscreen] = useState(null); // { type: 'single'|'compare', data, meta }
+  const [backTransitioning, setBackTransitioning] = useState(false);
+
+  const handleMinimizeFullscreen = useCallback((closeFn) => {
+    setBackTransitioning(true);
+    setTimeout(() => closeFn(), 200);
+    setTimeout(() => setBackTransitioning(false), 620);
+  }, []);
 
   const [account, setAccount] = useState(() => {
     try { return JSON.parse(localStorage.getItem('future-you-account')) || null; } catch { return null; }
@@ -898,7 +906,7 @@ export default function App() {
                           title="Collapse panel"
                           whileHover={{ scale: 1.08, background: 'rgba(255,255,255,0.14)', color: '#e2e8f0', borderColor: 'rgba(255,255,255,0.3)' }}
                           whileTap={{ scale: 0.92 }}
-                          style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(255,255,255,0.07)', border: '1.5px solid rgba(255,255,255,0.18)', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s' }}
+                          style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(0,212,177,0.08)', border: '1.5px solid rgba(0,212,177,0.45)', cursor: 'pointer', color: '#00d4b1', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s' }}
                         >
                           <ChevronsRight size={13} />
                         </motion.button>
@@ -1288,8 +1296,8 @@ export default function App() {
         <DayPredictionFullscreen
           prediction={dayPrediction}
           eventCount={timeline.events.length}
-          onMinimize={() => setPredictionFullscreen(false)}
-          onClose={() => setPredictionFullscreen(false)}
+          onMinimize={() => handleMinimizeFullscreen(() => setPredictionFullscreen(false))}
+          onClose={() => handleMinimizeFullscreen(() => setPredictionFullscreen(false))}
         />
       )}
     </AnimatePresence>
@@ -1300,8 +1308,8 @@ export default function App() {
         <DayPredictionFullscreen
           prediction={parallelFullscreen.data.prediction}
           eventCount={parallelFullscreen.data.eventCount}
-          onMinimize={() => setParallelFullscreen(null)}
-          onClose={() => setParallelFullscreen(null)}
+          onMinimize={() => handleMinimizeFullscreen(() => setParallelFullscreen(null))}
+          onClose={() => handleMinimizeFullscreen(() => setParallelFullscreen(null))}
         />
       )}
     </AnimatePresence>
@@ -1313,10 +1321,11 @@ export default function App() {
           pathBLabel={parallelFullscreen.data.pathBLabel}
           colorA={parallelFullscreen.data.colorA}
           colorB={parallelFullscreen.data.colorB}
-          onClose={() => setParallelFullscreen(null)}
+          onClose={() => handleMinimizeFullscreen(() => setParallelFullscreen(null))}
         />
       )}
     </AnimatePresence>
+    <TransitionScreen active={backTransitioning} />
     </>
   );
 }

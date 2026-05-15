@@ -44,8 +44,8 @@ export function DayPredictionFullscreen({ prediction, eventCount, onClose, onMin
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.98 }}
-      animate={{ opacity: 1, scale: 1, transition: { duration: 0.3, ease: [0.4, 0, 0.2, 1] } }}
+      initial={{ opacity: 1, scale: 1 }}
+      animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.96, x: 40, transition: { duration: 0.35, ease: [0.4, 0, 1, 1] } }}
       style={{ position: 'fixed', inset: 0, zIndex: 99999, background: '#09090f', display: 'flex', flexDirection: 'column' }}
     >

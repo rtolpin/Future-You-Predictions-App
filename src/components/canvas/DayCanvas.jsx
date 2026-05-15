@@ -310,7 +310,7 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
                       title="Collapse library"
                       whileHover={{ scale: 1.08, background: 'rgba(255,255,255,0.14)', color: '#e2e8f0', borderColor: 'rgba(255,255,255,0.3)' }}
                       whileTap={{ scale: 0.92 }}
-                      style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(255,255,255,0.07)', border: '1.5px solid rgba(255,255,255,0.18)', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s' }}
+                      style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(0,212,177,0.08)', border: '1.5px solid rgba(0,212,177,0.45)', cursor: 'pointer', color: '#00d4b1', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s' }}
                     >
                       <ChevronsLeft size={13} />
                     </motion.button>
@@ -477,16 +477,16 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
                   title={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
                   className="flex items-center cursor-pointer"
                   style={{
-                    display: 'flex', alignItems: 'center', gap: 6,
-                    padding: '7px 13px', borderRadius: 10,
+                    display: 'flex', alignItems: 'center', gap: 7,
+                    padding: '9px 16px', borderRadius: 11,
                     background: 'rgba(0,212,177,0.08)',
                     border: '1.5px solid rgba(0,212,177,0.35)',
                     color: '#00d4b1',
-                    fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: 12,
+                    fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: 14,
                     transition: 'all 0.15s ease',
                   }}
                 >
-                  {fullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+                  {fullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
                   {fullscreen ? 'Exit' : 'Full Screen'}
                 </motion.button>
               )}
