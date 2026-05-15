@@ -569,8 +569,15 @@ export default function App() {
               transition={{ duration: 3, repeat: Infinity }}
             >🔮</motion.div>
             <div className="text-left">
-              <h1 style={{ fontFamily: 'Space Grotesk', fontWeight: 800, fontSize: isMobile ? 13 : 14, color: '#f1f5f9', lineHeight: 1.2 }}>Future You</h1>
-              {!isMobile && <p className="text-xs text-slate-600 leading-tight">AI Life Simulator</p>}
+              <h1 style={{
+                fontFamily: 'Space Grotesk', fontWeight: 900,
+                fontSize: isMobile ? 17 : 22,
+                lineHeight: 1.15,
+                background: 'linear-gradient(135deg, #00d4b1 0%, #a78bfa 100%)',
+                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+                letterSpacing: '-0.2px',
+              }}>Future You</h1>
+              {!isMobile && <p style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.55)', fontFamily: 'DM Sans', letterSpacing: '0.04em', marginTop: 2 }}>AI Life Simulator</p>}
             </div>
           </motion.button>
 

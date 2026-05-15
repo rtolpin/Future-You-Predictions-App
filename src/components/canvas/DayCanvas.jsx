@@ -310,8 +310,8 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
                 {/* Expanded library content */}
                 <div className="flex flex-col h-full" style={{ overflow: 'hidden', overflowY: activeCard ? 'hidden' : 'auto' }}>
                   {/* Header */}
-                  <div className="flex items-center justify-between shrink-0" style={{ padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                    <span className="text-xs font-semibold tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                  <div className="flex items-center shrink-0" style={{ padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden', position: 'relative' }}>
+                    <span style={{ flex: 1, textAlign: 'center', fontSize: 13, fontWeight: 900, color: '#fff', fontFamily: 'Space Grotesk', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
                       Card Library
                     </span>
                     <motion.button
@@ -427,21 +427,22 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
             className="flex items-center justify-between shrink-0"
             style={{ padding: compact ? '10px 14px' : '14px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.15)', flexWrap: compact ? 'wrap' : 'nowrap', gap: compact ? 8 : 0 }}
           >
-            <div className="flex items-center" style={{ gap: 12 }}>
-              <div className="relative">
-                <div className="w-3 h-3 rounded-full" style={{ background: dayColor, boxShadow: `0 0 8px ${dayColor}` }} />
-                <div className="absolute inset-0 rounded-full animate-ping" style={{ background: dayColor, opacity: 0.3 }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div className="relative" style={{ width: 18, height: 18, flexShrink: 0 }}>
+                  <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#00d4b1', boxShadow: '0 0 12px rgba(0,212,177,0.8), 0 0 24px rgba(0,212,177,0.4)' }} />
+                  <div className="absolute inset-0 rounded-full animate-ping" style={{ background: '#00d4b1', opacity: 0.35 }} />
+                </div>
+                <h3 style={{ fontFamily: 'Space Grotesk', fontWeight: 900, fontSize: compact ? 14 : 20, lineHeight: 1.2, background: 'linear-gradient(135deg, #00d4b1 0%, #a78bfa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>{dayLabel}</h3>
               </div>
-              <div>
-                <h3 className="font-bold text-white" style={{ fontFamily: 'Space Grotesk', fontSize: compact ? 13 : 15, lineHeight: 1.3 }}>{dayLabel}</h3>
-                {!compact && <div style={{
+              {!compact && <div style={{
                   display: 'inline-flex', alignItems: 'center', gap: 8,
                   marginTop: 6, padding: '6px 10px', borderRadius: 10,
                   background: 'rgba(255,255,255,0.05)',
                   border: '1px solid rgba(255,255,255,0.12)',
                   boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
                 }}>
-                  <span style={{ fontSize: 10, fontWeight: 800, color: '#94a3b8', fontFamily: 'Space Grotesk', textTransform: 'uppercase', letterSpacing: '0.07em', whiteSpace: 'nowrap' }}>⏱ Day Duration</span>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: '#94a3b8', fontFamily: 'Space Grotesk', textTransform: 'uppercase', letterSpacing: '0.07em', whiteSpace: 'nowrap' }}>⏱ Day Duration</span>
                   <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.1)' }} />
                   {/* Start hour */}
                   {(() => {
@@ -506,7 +507,6 @@ export function DayCanvas({ timeline, onSimulate, onSimulateAll, onSelectEvent, 
                     })()}
                   </div>
                 )}
-              </div>
             </div>
 
             <div className="flex items-center" style={{ gap: 8, flexWrap: 'wrap' }}>

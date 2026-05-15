@@ -123,8 +123,7 @@ export function CardLibrary() {
     <div className="h-full flex flex-col overflow-hidden">
 
       {/* ── Header ── */}
-      <div style={{ padding: '14px 16px 10px', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.2)', flexShrink: 0 }}>
-        <h3 className="font-bold text-slate-200 uppercase tracking-widest" style={{ fontSize: 11, marginBottom: 8 }}>Card Library</h3>
+      <div style={{ padding: '10px 16px 10px', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.2)', flexShrink: 0 }}>
 
         {/* Search bar */}
         <div style={{ position: 'relative' }}>
