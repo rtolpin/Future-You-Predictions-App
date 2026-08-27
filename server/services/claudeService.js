@@ -6,6 +6,12 @@ function getClient() {
   return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 }
 
+function extractText(response) {
+  const block = response.content.find((b) => b.type === 'text');
+  if (!block) throw new Error('No text block in response');
+  return block.text.trim();
+}
+
 function buildSystemPrompt(profile) {
   return `You are "Future You" — an empathetic, insightful AI life simulator. Your job is to help users understand how their daily choices shape their emotional state, social environment, and long-term identity.
 
@@ -59,7 +65,7 @@ export async function simulateDecision({ action, timeSlot, profile, previousChoi
     messages: [{ role: 'user', content: buildDecisionPrompt(action, timeSlot, profile, previousChoices, appearance) }],
   });
 
-  const text = response.content[0].text.trim();
+  const text = extractText(response);
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error('No JSON in response');
   return JSON.parse(jsonMatch[0]);
@@ -154,7 +160,7 @@ Create a vivid, holistic day simulation. Each activity must be understood in con
     messages: [{ role: 'user', content: prompt }],
   });
 
-  const text = response.content[0].text.trim();
+  const text = extractText(response);
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error('No JSON in response');
   return JSON.parse(jsonMatch[0]);
@@ -230,7 +236,7 @@ Simulate both days fully, then compare them head-to-head. Return ONLY valid JSON
     messages: [{ role: 'user', content: prompt }],
   });
 
-  const text = response.content[0].text.trim();
+  const text = extractText(response);
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error('No JSON in response');
   return JSON.parse(jsonMatch[0]);
@@ -288,7 +294,7 @@ Simulate every path, compare them, and provide actionable suggestions. Return ON
     messages: [{ role: 'user', content: prompt }],
   });
 
-  const text = response.content[0].text.trim();
+  const text = extractText(response);
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error('No JSON in response');
   return JSON.parse(jsonMatch[0]);
@@ -367,7 +373,7 @@ Provide warm, honest, non-judgmental coaching. Celebrate wins authentically. For
     messages: [{ role: 'user', content: prompt }],
   });
 
-  const text = response.content[0].text.trim();
+  const text = extractText(response);
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error('No JSON in response');
   return JSON.parse(jsonMatch[0]);
@@ -404,7 +410,7 @@ Return ONLY valid JSON.`;
     messages: [{ role: 'user', content: prompt }],
   });
 
-  const text = response.content[0].text.trim();
+  const text = extractText(response);
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error('No JSON in response');
   return JSON.parse(jsonMatch[0]);
