@@ -156,7 +156,7 @@ Create a vivid, holistic day simulation. Each activity must be understood in con
 
   const response = await getClient().messages.create({
     model: MODEL,
-    max_tokens: 2048,
+    max_tokens: Math.min(8192, 1024 + events.length * 200),
     messages: [{ role: 'user', content: prompt }],
   });
 
