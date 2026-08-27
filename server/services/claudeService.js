@@ -230,9 +230,10 @@ Simulate both days fully, then compare them head-to-head. Return ONLY valid JSON
   }
 }`;
 
+  const totalEvents = pathA.events.length + pathB.events.length;
   const response = await getClient().messages.create({
     model: MODEL,
-    max_tokens: 4096,
+    max_tokens: Math.min(8192, 2048 + totalEvents * 150),
     messages: [{ role: 'user', content: prompt }],
   });
 
@@ -288,9 +289,10 @@ Simulate every path, compare them, and provide actionable suggestions. Return ON
   ]
 }`;
 
+  const totalNodes = paths.reduce((sum, p) => sum + p.length, 0);
   const response = await getClient().messages.create({
     model: MODEL,
-    max_tokens: 3000,
+    max_tokens: Math.min(8192, 1536 + totalNodes * 150),
     messages: [{ role: 'user', content: prompt }],
   });
 
